@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  db:
+      image: postgres:16
+      restart: on-failure
+      container_name: postgres-smp-db
+      environment:
+        POSTGRES_USER: postgres_local
+        POSTGRES_PASSWORD: MyStrongPassw0rd!
+        POSTGRES_DB: sm_parking
+      ports:
+        - "5432:5432"
+      volumes:
+        - ./ops/ps-init.sql:/docker-entrypoint-initdb.d/ps-init.sql
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mqtt-broker
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mqtt-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    restart: on-failure
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smart-parking-backend
+    depends_on:
+      - db
+      - mosquitto
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_URL=postgresql+asyncpg://postgres_local:MyStrongPassw0rd!@db:5432/sm_parking
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+    volumes:
+      - ./backend:/app
+    restart: on-failure
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
