@@ -1,18 +1,32 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import init_db
 from app import models
-from app.routers import router
-# from app.mqtt_consumer import start_mqtt_consumer, on_message  # Uncomment later
+from app.routers.user_router import router as user_router
+from app.routers.parking_router import router as parking_router
+from app.routers.spot_status_log_router import router as spot_status_log_router
+from app.routers.reservation_router import router as reservation_router
+from app.routers.user_favorites_router import router as user_favorites_router
+from app.mqtt_consumer import start_mqtt_consumer, add_websocket_client, remove_websocket_client
+import logging
+
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    print("Starting MQTT consumer...")
-    # await start_mqtt_consumer()  # Uncomment later
+    logger.info("Database initialized")
+
+    # Start MQTT consumer
+    try:
+        await start_mqtt_consumer()
+        logger.info("MQTT consumer started successfully")
+    except Exception as e:
+        logger.error(f"Failed to start MQTT consumer: {e}")
+
     yield
-    print("Shutting down...")
+    logger.info("Shutting down...")
 
 app = FastAPI(lifespan=lifespan, title="Smart Parking API")
 
@@ -25,19 +39,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# WebSocket
+# WebSocket for real-time updates
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print(f"Frontend connected: {websocket.client}")
-    while True:
-        try:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Echo: {data}")
-        except:
-            break
+    add_websocket_client(websocket)
+    logger.info(f"WebSocket client connected: {websocket.client}")
 
-app.include_router(router, prefix="/api", tags=["Users"])
+    try:
+        while True:
+            # Keep connection alive and handle any client messages
+            data = await websocket.receive_text()
+            # Echo back for testing
+            await websocket.send_json({"type": "echo", "message": data})
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket client disconnected: {websocket.client}")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        remove_websocket_client(websocket)
+
+# Include all routers
+app.include_router(user_router, prefix="/api")
+app.include_router(parking_router, prefix="/api")
+app.include_router(spot_status_log_router, prefix="/api")
+app.include_router(reservation_router, prefix="/api")
+app.include_router(user_favorites_router, prefix="/api")
 
 @app.get("/")
 async def root():
