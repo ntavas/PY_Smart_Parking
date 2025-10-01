@@ -60,5 +60,3 @@ async def get_spots(db: AsyncSession = Depends(get_db)):
             last_updated=spot.last_updated.isoformat() if spot.last_updated else None
         ) for spot in spots
     ]
-
-# Similar for POST, PUT, DELETE as in my earlier response...
