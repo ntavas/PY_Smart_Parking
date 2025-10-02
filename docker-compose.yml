@@ -11,7 +11,24 @@ services:
       - "5432:5432"
     volumes:
       - ./ops/ps-init.sql:/docker-entrypoint-initdb.d/ps-init.sql
-
+  redis: # Redis for local dev (ElastiCache for presentation)
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    restart: on-failure
+    volumes:
+      - ./redis_data:/data  # Persist data across restarts
+  redisInsight:
+    image: redis/redisinsight:latest
+    container_name: redis-insight
+    restart: on-failure
+    ports:
+      - "5540:5540"        # UI at http://localhost:5540
+    depends_on:
+      - redis
+    volumes:
+      - ./redisinsight_data:/data  # persist RI settings (saved connections, etc.)
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: mqtt-broker
@@ -32,12 +49,16 @@ services:
     depends_on:
       - db
       - mosquitto
+      - redis
     ports:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres_local:MyStrongPassw0rd!@db:5432/sm_parking
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
     volumes:
       - ./backend:/app  # Mount for development adjustments if needed
     restart: on-failure

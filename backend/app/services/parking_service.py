@@ -1,4 +1,8 @@
 from app.repositories.parking_repository import ParkingRepository
+from app.models import ParkingSpot
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ParkingService:
     def __init__(self, repo: ParkingRepository):
@@ -26,3 +30,12 @@ class ParkingService:
         spot = await self.repo.delete_spot(spot_id)
         if not spot:
             raise ValueError("Spot not found")
+
+    async def get_spots_in_viewport(self, sw_lat, sw_lng, ne_lat, ne_lng, status, limit):
+        spots, hit = await self.repo.get_spots_in_viewport_cached(sw_lat, sw_lng, ne_lat, ne_lng, status)
+        if hit and spots:
+            logger.info("Fetched from cache")
+            return spots
+        spots = await self.repo.get_spots_in_viewport(sw_lat, sw_lng, ne_lat, ne_lng, status, limit)
+        logger.info("Fetched from DB")
+        return spots

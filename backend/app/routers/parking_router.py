@@ -2,12 +2,14 @@ from app.database import get_db
 from app.repositories.parking_repository import ParkingRepository
 from app.services.parking_service import ParkingService
 from app.dtos.parking_dto import ParkingSpotCreate, ParkingSpotResponse
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.services.parking_service import ParkingService
 from app.repositories.parking_repository import ParkingRepository
 from app.dtos.parking_dto import ParkingSpotCreate, ParkingSpotUpdate, ParkingSpotResponse
+from app.dtos.parking_dto import ViewportResponse
+
 
 router = APIRouter(prefix="/parking", tags=["parking"])
 
@@ -60,3 +62,35 @@ async def get_spots(db: AsyncSession = Depends(get_db)):
             last_updated=spot.last_updated.isoformat() if spot.last_updated else None
         ) for spot in spots
     ]
+
+
+@router.get("/spots/viewport", response_model=ViewportResponse)
+async def get_spots_viewport(
+        sw_lat: float = Query(..., alias="swLat", description="Southwest latitude"),
+        sw_lng: float = Query(..., alias="swLng", description="Southwest longitude"),
+        ne_lat: float = Query(..., alias="neLat", description="Northeast latitude"),
+        ne_lng: float = Query(..., alias="neLng", description="Northeast longitude"),
+        zoom: int = Query(None, description="Map zoom level"),
+        status: str = Query(None, description="Optional status filter"),
+        limit: int = Query(100, gt=0, le=500),
+        db: AsyncSession = Depends(get_db)
+):
+    repo = ParkingRepository(db)
+    service = ParkingService(repo)
+
+    spots = await service.get_spots_in_viewport(sw_lat, sw_lng, ne_lat, ne_lng, status, limit)
+
+    # Map to DTOs
+    spot_dtos = [
+        ParkingSpotResponse(
+            id=spot.id,
+            latitude=spot.latitude,
+            longitude=spot.longitude,
+            location=spot.location,
+            status=spot.status,
+            last_updated=spot.last_updated.isoformat() if spot.last_updated else None
+        ) for spot in spots
+    ]
+
+    return ViewportResponse(spots=spot_dtos,
+                            total=len(spot_dtos))  # For now, total is len(spots); could add COUNT query later

@@ -3,6 +3,7 @@ from .models import Base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
+import redis.asyncio as redis
 
 load_dotenv()  # Load from .env
 
@@ -10,6 +11,13 @@ DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql+asyncpg://postgres_local
 
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)  # Async engine
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+# Redis from docker-compose env
+REDIS_HOST = os.getenv("REDIS_HOST") or "localhost"
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_DB = int(os.getenv("REDIS_DB", 0))
+
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 
 async def init_db():
     # Create tables (on startup)

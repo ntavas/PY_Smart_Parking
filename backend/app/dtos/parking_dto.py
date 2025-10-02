@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class ParkingSpotCreate(BaseModel):
     location: str
@@ -33,3 +33,7 @@ class SpotStatusLogResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ViewportResponse(BaseModel):
+    spots: List[ParkingSpotResponse]
+    total: int
