@@ -9,6 +9,7 @@ from app.routers.spot_status_log_router import router as spot_status_log_router
 from app.routers.reservation_router import router as reservation_router
 from app.routers.user_favorites_router import router as user_favorites_router
 from app.mqtt_consumer import start_mqtt_consumer, add_websocket_client, remove_websocket_client
+from app.database import get_session, redis_client  # Already imported
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,18 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
+
+    # Preload Redis cache RIGHT after DB init
+    session = await get_session()
+    try:
+        from app.repositories.parking_repository import ParkingRepository
+        repo = ParkingRepository(session)
+        await repo.preload_spots_to_cache()
+        logger.info("Redis cache preload successful")
+    except Exception as e:
+        logger.error(f"Failed to preload Redis cache: {e}")
+    finally:
+        await session.close()
 
     # Start MQTT consumer
     try:
