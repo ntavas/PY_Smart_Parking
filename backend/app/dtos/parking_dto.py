@@ -20,6 +20,7 @@ class ParkingSpotResponse(BaseModel):
     location: str
     status: str
     last_updated: str | None
+    price_per_hour: Optional[float] = None
 
 class SpotStatusLogCreate(BaseModel):
     spot_id: int

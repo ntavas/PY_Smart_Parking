@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
 from datetime import datetime
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.models import ParkingSpot
+from sqlalchemy import select, insert, update, delete
+from app.models import ParkingSpot, PaidParking
 from app.database import redis_client
 
 logger = logging.getLogger(__name__)
@@ -43,6 +45,13 @@ class ParkingRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    # --- NEW: fetch all paid prices into a dict[spot_id] = Decimal(price) ---
+    async def _get_paid_prices_map(self) -> Dict[int, Decimal]:
+        res = await self.db.execute(select(PaidParking.spot_id, PaidParking.price_per_hour))
+        rows = res.all()
+        return {int(spot_id): (price if isinstance(price, Decimal) else Decimal(str(price)))
+                for (spot_id, price) in rows}
+
     async def get_all_spots(self) -> List[ParkingSpot]:
         res = await self.db.execute(select(ParkingSpot))
         return res.scalars().all()
@@ -75,13 +84,13 @@ class ParkingRepository:
         return spot
 
     async def get_spots_in_viewport(
-        self,
-        sw_lat: float,
-        sw_lng: float,
-        ne_lat: float,
-        ne_lng: float,
-        status: Optional[str] = None,
-        limit: int = 100,
+            self,
+            sw_lat: float,
+            sw_lng: float,
+            ne_lat: float,
+            ne_lng: float,
+            status: Optional[str] = None,
+            limit: int = 100,
     ) -> List[ParkingSpot]:
         q = select(ParkingSpot).where(
             ParkingSpot.latitude >= sw_lat,
@@ -93,7 +102,19 @@ class ParkingRepository:
             q = q.where(ParkingSpot.status == status)
         q = q.order_by(ParkingSpot.last_updated.desc()).limit(limit)
         res = await self.db.execute(q)
-        return res.scalars().all()
+        spots = list(res.scalars().all())
+
+        # Get paid prices for these spots
+        paid_map = await self._get_paid_prices_map()
+
+        # Set price_per_hour for each spot
+        for spot in spots:
+            if spot.id in paid_map:
+                spot.price_per_hour = paid_map[spot.id]
+            else:
+                spot.price_per_hour = None
+
+        return spots
 
     async def get_spots_in_viewport_cached(
         self,
@@ -107,7 +128,7 @@ class ParkingRepository:
         center_lng = (sw_lng + ne_lng) / 2
         center_lat = (sw_lat + ne_lat) / 2
         radius_km = max(abs(ne_lat - sw_lat), abs(ne_lng - sw_lng)) * 111.32
-
+        logger.debug(f"Searching for spots in radius {radius_km}km around {center_lat}, {center_lng} ({geo_key})")
         try:
             members = await redis_client.geosearch(
                 geo_key,
@@ -141,11 +162,29 @@ class ParkingRepository:
                 loc = m.get("location", "")
                 st = m.get("status", "")
                 lu = _parse_dt(m.get("last_updated"))
+                price_per_hour = m.get("price_per_hour")
+
                 if any(map(lambda x: x != x, [lat, lng])) or not st:
                     continue
-                spots.append(ParkingSpot(
-                    id=pid, latitude=lat, longitude=lng, location=loc, status=st, last_updated=lu
-                ))
+
+                price = None
+                if price_per_hour:
+                    try:
+                        price = Decimal(price_per_hour)
+                    except:
+                        price = None
+
+                p = ParkingSpot(
+                    id=pid,
+                    latitude=lat,
+                    longitude=lng,
+                    location=loc,
+                    status=st,
+                    last_updated=lu,
+                    price_per_hour=price
+                )
+
+                spots.append(p)
             except Exception:
                 continue
 
@@ -156,33 +195,72 @@ class ParkingRepository:
     async def preload_spots_to_cache(self) -> None:
         """Warm Redis cache with ALL spots from DB on startup. Joins existing cache data."""
         logger.info("Preloading all spots into Redis cache...")
-        all_spots = await self.get_all_spots()  # Grab full set from DB
+        all_spots = await self.get_all_spots()
+        paid_map = await self._get_paid_prices_map()  # spot_id -> Decimal price
+
+        # Optional: maintain a set of paid spot ids for quick filters
+        # We'll rebuild it from scratch to stay consistent.
+        try:
+            await redis_client.delete("spots:paid")
+        except Exception:
+            pass
+
         for spot in all_spots:
             try:
-                # Upsert base hash (always, even if existing)
-                await redis_client.hset(
-                    f"spot:{spot.id}",
-                    mapping={
-                        "id": str(spot.id),
-                        "latitude": "" if spot.latitude is None else str(spot.latitude),
-                        "longitude": "" if spot.longitude is None else str(spot.longitude),
-                        "location": spot.location,
-                        "status": spot.status,
-                        "last_updated": (
-                            spot.last_updated.isoformat()
-                            if spot.last_updated else ""
-                        ),
-                    },
-                )
-                # Add to status set (idempotent)
+                mapping = {
+                    "id": str(spot.id),
+                    "latitude": "" if spot.latitude is None else str(spot.latitude),
+                    "longitude": "" if spot.longitude is None else str(spot.longitude),
+                    "location": spot.location,
+                    "status": spot.status,
+                    "last_updated": (spot.last_updated.isoformat() if spot.last_updated else ""),
+                }
+
+                # NEW: if spot is paid, include the price in the hash and set membership
+                if spot.id in paid_map:
+                    price = paid_map[spot.id]
+                    mapping["price_per_hour"] = str(price)
+                    await redis_client.sadd("spots:paid", spot.id)
+
+                await redis_client.hset(f"spot:{spot.id}", mapping=mapping)
+
+                # Status set (idempotent)
                 await redis_client.sadd(f"spots:by_status:{spot.status}", spot.id)
-                # Add to GEO set (if coords exist)
+
+                # GEO (if coords exist)
                 if spot.longitude is not None and spot.latitude is not None:
                     await redis_client.execute_command(
-                        "GEOADD", f"spots:geo:{spot.status}", spot.longitude, spot.latitude, f"spot_{spot.id}"
+                        "GEOADD", f"spots:geo:{spot.status}", float(spot.longitude), float(spot.latitude), f"spot_{spot.id}"
                     )
-                logger.debug(f"Preloaded spot {spot.id} (status={spot.status}) to cache")
+
+                logger.debug(f"Preloaded spot {spot.id} (status={spot.status}, paid={'yes' if spot.id in paid_map else 'no'})")
             except Exception as e:
                 logger.error(f"Error preloading spot {spot.id}: {e}")
 
         logger.info(f"Cache preload complete: {len(all_spots)} spots indexed.")
+
+    # --- OPTIONAL: small helpers to upsert/remove price and keep Redis in sync ---
+
+    async def upsert_paid_price(self, spot_id: int, price_per_hour: float) -> None:
+        """Create or update the paid price for a spot and update Redis hash/set."""
+        # Upsert DB
+        exists = await self.db.get(PaidParking, spot_id)
+        if exists:
+            exists.price_per_hour = Decimal(str(price_per_hour))
+        else:
+            self.db.add(PaidParking(spot_id=spot_id, price_per_hour=Decimal(str(price_per_hour))))
+        await self.db.commit()
+
+        # Update Redis
+        await redis_client.hset(f"spot:{spot_id}", mapping={"price_per_hour": str(price_per_hour)})
+        await redis_client.sadd("spots:paid", spot_id)
+
+    async def remove_paid_price(self, spot_id: int) -> None:
+        """Remove paid price for a spot (free spot now) and update Redis hash/set."""
+        # DB delete
+        await self.db.execute(delete(PaidParking).where(PaidParking.spot_id == spot_id))
+        await self.db.commit()
+
+        # Redis cleanup
+        await redis_client.hdel(f"spot:{spot_id}", "price_per_hour")
+        await redis_client.srem("spots:paid", spot_id)

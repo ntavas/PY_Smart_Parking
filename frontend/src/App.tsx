@@ -9,17 +9,23 @@ import { useViewportSpots } from "./hooks/useViewportSpots";
 import type { ParkingSpot } from "./types/parking";
 import { isAvailable } from "./types/parking";
 
+export type Tab = "all" | "free" | "paid";
+
 export default function App() {
     const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000/api";
 
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [tab, setTab] = useState<Tab>("all"); // <-- lifted tab
 
     const { isDark, toggleTheme } = useTheme();
     const { coords } = useGeolocation();
 
     const [bounds, setBounds] = useState<Bounds>({
-        swLat: 37.9, swLng: 23.6, neLat: 38.1, neLng: 23.9,
+        swLat: 37.9,
+        swLng: 23.6,
+        neLat: 38.1,
+        neLng: 23.9,
     });
 
     // Cache-backed viewport fetch
@@ -32,7 +38,9 @@ export default function App() {
     const merged: ParkingSpot[] = useMemo(() => {
         if (!liveSpots.length) return viewportSpots;
         const statusMap = new Map(liveSpots.map((s) => [s.id, s.status]));
-        return viewportSpots.map((s) => (statusMap.has(s.id) ? { ...s, status: statusMap.get(s.id)! } : s));
+        return viewportSpots.map((s) =>
+            statusMap.has(s.id) ? { ...s, status: statusMap.get(s.id)! } : s
+        );
     }, [viewportSpots, liveSpots]);
 
     const availableSpots = useMemo(() => merged.filter(isAvailable), [merged]);
@@ -75,6 +83,7 @@ export default function App() {
                         spots={merged}
                         onBounds={setBounds}
                         isDark={isDark}
+                        selectedTab={tab}            // <-- pass tab to map
                     />
                 </div>
 
@@ -84,10 +93,15 @@ export default function App() {
                     userCoords={coords || undefined}
                     isOpen={isSidebarOpen}
                     onClose={() => setIsSidebarOpen(false)}
+                    selectedTab={tab}             // <-- controlled tab
+                    onChangeTab={setTab}          // <-- change handler
                 />
 
                 {isSidebarOpen && (
-                    <div className="fixed inset-0 bg-black/50 z-[1500] md:hidden" onClick={() => setIsSidebarOpen(false)} />
+                    <div
+                        className="fixed inset-0 bg-black/50 z-[1500] md:hidden"
+                        onClick={() => setIsSidebarOpen(false)}
+                    />
                 )}
             </div>
         </div>

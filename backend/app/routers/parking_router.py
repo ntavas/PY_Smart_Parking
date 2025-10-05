@@ -37,8 +37,13 @@ async def get_spots_viewport(
 
     spots = await service.get_spots_in_viewport(sw_lat, sw_lng, ne_lat, ne_lng, status, limit)
     dtos = [ParkingSpotResponse(
-    id=s.id, latitude=s.latitude, longitude=s.longitude, location=s.location,
-    status=s.status, last_updated=s.last_updated.isoformat() if s.last_updated else None
+        id=s.id,
+        latitude=s.latitude,
+        longitude=s.longitude,
+        location=s.location,
+        status=s.status,
+        price_per_hour=s.price_per_hour,
+        last_updated=s.last_updated.isoformat() if s.last_updated else None
     ) for s in spots]
     return ViewportResponse(spots=dtos, total=len(dtos))
 

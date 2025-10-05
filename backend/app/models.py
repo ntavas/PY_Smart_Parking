@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, Text, DateTime, ForeignKey, func
+from sqlalchemy import Column, Integer, Float, String, Text, DateTime, ForeignKey, func, Numeric
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 class Base(DeclarativeBase):
@@ -14,7 +14,10 @@ class ParkingSpot(Base):
     status = Column(String(20), nullable=False, default="Available")
     last_updated = Column(DateTime(timezone=False), server_default=func.now())
 
-    # Relationships
+    # NEW: one-to-one paid info
+    paid_info = relationship("PaidParking", uselist=False, back_populates="spot")
+
+    # Existing relationships
     status_logs = relationship("SpotStatusLog", back_populates="spot")
     favorites = relationship("UserFavorites", back_populates="spot")
     reservations = relationship("Reservation", back_populates="spot")
@@ -65,3 +68,13 @@ class Reservation(Base):
     # Relationships
     user = relationship("User", back_populates="reservations")
     spot = relationship("ParkingSpot", back_populates="reservations")
+
+
+class PaidParking(Base):
+    __tablename__ = "paid_parking"
+
+    # 1–1 with ParkingSpot
+    spot_id = Column(Integer, ForeignKey("parking_spots.id"), primary_key=True)
+    price_per_hour = Column(Numeric(8, 2), nullable=False)
+
+    spot = relationship("ParkingSpot", back_populates="paid_info")

@@ -53,6 +53,15 @@ CREATE TABLE reservations (
 CREATE INDEX idx_spots_bbox ON parking_spots USING BTREE(latitude, longitude);
 CREATE INDEX idx_spots_bbox_status ON parking_spots USING BTREE(status, latitude, longitude);
 
+-- Paid parking spots
+CREATE TABLE paid_parking (
+    spot_id        INTEGER PRIMARY KEY
+                   REFERENCES parking_spots(id) ON DELETE CASCADE,
+    price_per_hour NUMERIC(8,2) NOT NULL CHECK (price_per_hour >= 0)
+);
+
+CREATE INDEX idx_paid_parking_price ON paid_parking (price_per_hour);
+
 
 -- Athens parking spots
 INSERT INTO parking_spots (latitude, longitude, location, status) VALUES

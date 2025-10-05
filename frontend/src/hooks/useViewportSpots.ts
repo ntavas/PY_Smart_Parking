@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ParkingSpot } from "../types/parking";
+import { normalizeSpot } from "../utils/normalizeSpot.ts";
 
 type Bounds = { swLat: number; swLng: number; neLat: number; neLng: number };
 
@@ -29,7 +30,7 @@ export function useViewportSpots(
             const res = await fetch(`${apiBase}/parking/spots/in_viewport?${qs}`);
             if (!res.ok) return;
             const data: { spots: ParkingSpot[]; total: number } = await res.json();
-            if (!cancelled) setSpots(data.spots);
+            if (!cancelled) setSpots(data.spots.map(normalizeSpot));
         })();
         return () => { cancelled = true; };
     }, [apiBase, qs]);

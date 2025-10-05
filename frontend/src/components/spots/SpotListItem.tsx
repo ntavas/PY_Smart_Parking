@@ -1,7 +1,8 @@
+// components/spots/SpotListItem.tsx
 type Props = {
     name: string;
     address: string;
-    pricePerHour: number;
+    pricePerHour: number | null;
     minutesWalk: number | null;
     showReserve: boolean;
     onNavigate?: () => void;
@@ -15,27 +16,29 @@ export default function SpotListItem({
     showReserve,
     onNavigate,
 }: Props) {
+    const isPaid = pricePerHour != null && !Number.isNaN(pricePerHour);
+
     return (
         <div className="rounded-lg border border-gray-400 bg-white p-4 shadow-sm dark:border-gray-500 dark:bg-gray-800">
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                        {name}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {address}
-                    </p>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{name}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{address}</p>
+
                     <div className="mt-2 flex items-center gap-4 text-sm">
-                        <span className="text-green-600 dark:text-green-400 font-medium">
-                            Free parking
-                        </span>
-                        {minutesWalk && (
-                            <span className="text-gray-500 dark:text-gray-400">
-                                {minutesWalk} min drive
+                        {isPaid ? (
+                            <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                €{pricePerHour!.toFixed(2)}/hr • Paid
                             </span>
+                        ) : (
+                            <span className="text-green-600 dark:text-green-400 font-medium">Free parking</span>
+                        )}
+                        {minutesWalk !== null && (
+                            <span className="text-gray-500 dark:text-gray-400">{minutesWalk} min drive</span>
                         )}
                     </div>
                 </div>
+
                 <div className="flex flex-col gap-2 ml-3">
                     {showReserve && (
                         <button

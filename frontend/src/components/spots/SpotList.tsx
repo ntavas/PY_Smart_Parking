@@ -1,4 +1,5 @@
-import type { ParkingSpot} from '../../types/parking';
+// components/spots/SpotList.tsx
+import type { ParkingSpot } from '../../types/parking';
 import { haversineMeters } from '../../utils/distance';
 import { toLatLng } from '../../types/parking';
 import SpotListItem from './SpotListItem';
@@ -8,14 +9,12 @@ type Props = {
     spots: ParkingSpot[];
     userCoords?: { lat: number; lng: number };
     showReserve: boolean;
-    computeWalkMins: (meters: number) => number; // Actually computes driving time now
+    computeWalkMins: (meters: number) => number;
 };
 
 export default function SpotList({ spots, userCoords, showReserve, computeWalkMins }: Props) {
-    // Sort spots by distance when user coordinates are available
     const sortedSpots = useMemo(() => {
         if (!userCoords) return spots;
-
         return [...spots].sort((a, b) => {
             const distanceA = haversineMeters(userCoords, toLatLng(a));
             const distanceB = haversineMeters(userCoords, toLatLng(b));
@@ -24,7 +23,6 @@ export default function SpotList({ spots, userCoords, showReserve, computeWalkMi
     }, [spots, userCoords]);
 
     const handleNavigate = (spot: ParkingSpot) => {
-        // Open Google Maps with directions
         const destination = `${spot.latitude},${spot.longitude}`;
         const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=walking`;
         window.open(url, '_blank');
@@ -44,11 +42,8 @@ export default function SpotList({ spots, userCoords, showReserve, computeWalkMi
                             Sorted by distance from your location
                         </div>
                     )}
-                    {sortedSpots.map(s => {
-                        const meters = userCoords
-                            ? haversineMeters(userCoords, toLatLng(s))
-                            : null;
-
+                    {sortedSpots.map((s) => {
+                        const meters = userCoords ? haversineMeters(userCoords, toLatLng(s)) : null;
                         const mins = meters != null ? computeWalkMins(meters) : null;
 
                         return (
@@ -56,8 +51,8 @@ export default function SpotList({ spots, userCoords, showReserve, computeWalkMi
                                 key={s.id}
                                 name={s.location}
                                 address={s.location}
-                                pricePerHour={0}
-                                minutesWalk={mins} // Actually driving time now
+                                pricePerHour={s.pricePerHour ?? null}
+                                minutesWalk={mins}
                                 showReserve={showReserve}
                                 onNavigate={() => handleNavigate(s)}
                             />

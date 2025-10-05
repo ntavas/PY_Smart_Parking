@@ -1,5 +1,3 @@
-// Mirrors backend SQLAlchemy models (models.py)
-
 export const SpotStatus = {
     Available: "Available",
     Occupied: "Occupied",
@@ -9,14 +7,19 @@ export const SpotStatus = {
 
 export type SpotStatus = typeof SpotStatus[keyof typeof SpotStatus];
 
+export type ParkingStatus = "Available" | "Occupied" | "Reserved" | string;
+
 export type ParkingSpot = {
     id: number;
     latitude: number;
     longitude: number;
     location: string;
-    status: SpotStatus;
-    last_updated: string;
+    status: ParkingStatus;
+    last_updated?: string;
+    pricePerHour?: number | null;
 };
+
+
 
 export type SpotStatusLog = {
     id: number;
@@ -55,3 +58,7 @@ export function toLatLng(spot: ParkingSpot): LatLng {
 export function isAvailable(spot: ParkingSpot): boolean {
     return spot.status === SpotStatus.Available;
 }
+
+export const isPaid = (s: ParkingSpot) => (s.pricePerHour ?? null) !== null && s.pricePerHour !== undefined;
+export const isFree = (s: ParkingSpot) => !isPaid(s);
+
