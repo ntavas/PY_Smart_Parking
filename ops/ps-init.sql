@@ -113,3 +113,13 @@ INSERT INTO parking_spots (latitude, longitude, location, status) VALUES
 (39.6420, 22.4150, 'Larissa - Railway Station', 'Occupied'),
 (39.6360, 22.4220, 'Larissa - Shopping Center', 'Available'),
 (39.6380, 22.4180, 'Larissa - Municipal Park', 'Reserved');
+
+-- paid parking spots
+INSERT INTO paid_parking (spot_id, price_per_hour) VALUES
+(1, 2.50),
+(3, 3.00),
+(5, 2.00),
+(10, 4.00),
+(11, 2.00),
+(12, 5.00),
+(15, 2.75);

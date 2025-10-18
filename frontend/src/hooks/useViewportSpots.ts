@@ -7,7 +7,7 @@ type Bounds = { swLat: number; swLng: number; neLat: number; neLng: number };
 export function useViewportSpots(
     apiBase = "http://localhost:8000/api",
     bounds: Bounds,
-    status: "Available" | "Occupied" | "Reserved" | "Maintenance" | undefined = "Available",
+    status: "Available" | "Occupied" | "Reserved" | "Maintenance" | undefined = undefined,
     limit = 200
 ) {
     const [spots, setSpots] = useState<ParkingSpot[]>([]);

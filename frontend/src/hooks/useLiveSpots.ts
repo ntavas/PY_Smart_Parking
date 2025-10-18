@@ -1,81 +1,139 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ParkingSpot } from "../types/parking";
-import { normalizeSpot } from "../utils/normalizeSpot.ts";
+// useLiveSpots.ts
+import { useEffect, useRef, useState } from "react";
 
-// type SpotStatus = ParkingSpot["status"];
-// const VALID_STATUSES = ["Available", "Occupied", "Reserved", "Maintenance"] as const;
-//
-// function asSpotStatus(x: unknown): SpotStatus | null {
-//     return typeof x === "string" && (VALID_STATUSES as readonly string[]).includes(x as string)
-//         ? (x as SpotStatus)
-//         : null;
-// }
+export type LiveSpot = { id: number; status: string };
 
-function wsUrlFromApiBase(apiBase: string): string {
-    const u = new URL(apiBase);
-    u.pathname = "/ws";
-    u.protocol = u.protocol === "https:" ? "wss:" : "ws:";
-    return u.toString();
+// If you ever want to make it configurable, set VITE_WS_URL in .env
+const WS_ENDPOINT =
+    (import.meta as any)?.env?.VITE_WS_URL ?? "ws://localhost:8000/ws";
+
+function coerceToLiveSpot(obj: any): LiveSpot | null {
+    if (!obj || typeof obj !== "object") {
+        return null;
+    }
+
+    if (("id" in obj || "spot_id" in obj) && "status" in obj) {
+        const id = Number("id" in obj ? obj.id : obj.spot_id);
+        const status = String(obj.status);
+        const result = Number.isFinite(id) ? { id, status } : null;
+        return result;
+    }
+
+    if ("topic" in obj && "payload" in obj && typeof obj.topic === "string") {
+        const parts = String(obj.topic).split("/");
+        const maybeId = Number(parts?.[2]);
+        if (Number.isFinite(maybeId)) {
+            const result = { id: maybeId, status: String(obj.payload) };
+            return result;
+        }
+    }
+
+    if (Array.isArray(obj) && obj.length > 0) {
+        return coerceToLiveSpot(obj[0]);
+    }
+
+    return null;
 }
 
-export function useLiveSpots(apiBase = "http://localhost:8000/api") {
-    const [spots, setSpots] = useState<ParkingSpot[]>([]);
+function parseMessage(data: any): LiveSpot | null {
+
+    if (typeof data === "string") {
+        try {
+            const parsed = JSON.parse(data);
+            return coerceToLiveSpot(parsed);
+        } catch (e) {
+            console.warn('Failed to parse JSON from string:', data, e);
+            return null;
+        }
+    }
+    if (typeof data === "object" && data !== null) {
+        console.log('Processing object data:', data);
+        return coerceToLiveSpot(data);
+    }
+    console.warn('Unhandled message type:', typeof data, data);
+    return null;
+}
+
+export function useLiveSpots() {
+    const [spots, setSpots] = useState<LiveSpot[]>([]);
+    const [connected, setConnected] = useState(false);
+
+    // Internal state not triggering re-renders directly
+    const byIdRef = useRef<Map<number, LiveSpot>>(new Map());
     const wsRef = useRef<WebSocket | null>(null);
-    const retryRef = useRef(0);
-    const wsUrl = useMemo(() => wsUrlFromApiBase(apiBase), [apiBase]);
+    const reconnectTimerRef = useRef<number | null>(null);
+    const backoffRef = useRef(500); // ms, doubles up to 10s
+    const isMountedRef = useRef(true);
 
     useEffect(() => {
-        let cancelled = false;
-
-        const fetchInitial = async () => {
-            const res = await fetch(`${apiBase}/parking/spots`);
-            if (!res.ok) return;
-            const data: ParkingSpot[] = await res.json();
-            if (!cancelled) setSpots(data);
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+            try { wsRef.current?.close(); } catch {}
         };
+    }, []);
 
+    useEffect(() => {
         const connect = () => {
-            const ws = new WebSocket(wsUrl);
+            if (!isMountedRef.current) return;
+
+            try { wsRef.current?.close(); } catch {}
+            const ws = new WebSocket(WS_ENDPOINT);
             wsRef.current = ws;
 
-            ws.onopen = () => { retryRef.current = 0; };
-            ws.onmessage = (ev) => {
-                const msg = JSON.parse(ev.data);
-
-                if (msg.type === "spot_update" && msg.spot) {
-                    const spot = normalizeSpot(msg.spot);
-                    setSpots((prev) => {
-                        const idx = prev.findIndex((s) => s.id === spot.id);
-                        if (idx === -1) return [...prev, spot];
-                        const copy = prev.slice();
-                        copy[idx] = { ...copy[idx], ...spot };
-                        return copy;
-                    });
-                }
-
-                if (msg.type === "spot_patch" && msg.spot) {
-                    const partial = normalizeSpot({ ...msg.spot });
-                    setSpots((prev) => {
-                        const idx = prev.findIndex((s) => s.id === partial.id);
-                        if (idx === -1) return prev;
-                        const copy = prev.slice();
-                        copy[idx] = { ...copy[idx], ...partial };
-                        return copy;
-                    });
-                }
+            ws.onopen = () => {
+                if (!isMountedRef.current) return;
+                setConnected(true);
+                backoffRef.current = 500; // reset backoff
             };
-            ws.onerror = () => {};
+
+            ws.onmessage = (evt) => {
+                if (!isMountedRef.current) return;
+                const parsed = parseMessage(evt.data);
+                if (!parsed) {
+                    console.warn('Failed to parse WebSocket message:', evt.data);
+                    return;
+                }
+
+                // Always update the Map and state, even if status is the same
+                // This ensures we don't miss any updates due to timing issues
+                const next = new Map(byIdRef.current);
+                next.set(parsed.id, parsed);
+                byIdRef.current = next;
+                
+                // Always trigger a state update to ensure React re-renders
+                setSpots(Array.from(next.values()));
+            };
+
+            const scheduleReconnect = () => {
+                if (!isMountedRef.current) return;
+                setConnected(false);
+                const delay = Math.min(backoffRef.current, 10_000);
+                backoffRef.current = Math.min(backoffRef.current * 2, 10_000);
+                if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+                reconnectTimerRef.current = window.setTimeout(connect, delay);
+            };
+
+            ws.onerror = () => {
+                // If the server closes before open, you’ll see “closed before established”
+                scheduleReconnect();
+            };
+
             ws.onclose = () => {
-                if (cancelled) return;
-                const delay = Math.min(30000, 1000 * Math.pow(2, retryRef.current++));
-                setTimeout(connect, delay);
+                scheduleReconnect();
             };
         };
 
-        fetchInitial();
         connect();
-        return () => { cancelled = true; wsRef.current?.close(); };
-    }, [apiBase, wsUrl]);
 
-    return { spots };
+        return () => {
+            if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+            try { wsRef.current?.close(); } catch {}
+            wsRef.current = null;
+            setConnected(false);
+        };
+    }, []);
+
+    return { spots, connected, wsUrl: WS_ENDPOINT };
 }

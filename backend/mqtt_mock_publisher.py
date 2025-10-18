@@ -14,8 +14,8 @@ SPOT_ID_MIN = 1
 SPOT_ID_MAX = 24
 
 # send 8 random spot updates every INTERVAL_SECONDS
-INTERVAL_SECONDS = 5
-BATCH_SIZE = 8
+INTERVAL_SECONDS = 3
+BATCH_SIZE = 3
 
 # Statuses the backend accepts
 STATUSES: List[str] = ["Available", "Occupied", "Reserved", "Maintenance"]

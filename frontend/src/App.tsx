@@ -28,22 +28,29 @@ export default function App() {
         neLng: 23.9,
     });
 
-    // Cache-backed viewport fetch
-    const viewportSpots = useViewportSpots(API_BASE, bounds, "Available");
+    // Cache-backed viewport fetch - get ALL spots, not just available ones
+    const viewportSpots = useViewportSpots(API_BASE, bounds, undefined);
 
     // Live deltas from WS
-    const { spots: liveSpots } = useLiveSpots(API_BASE);
+    const { spots: liveSpots } = useLiveSpots();
 
     // Merge: overlay live statuses on the viewport list
     const merged: ParkingSpot[] = useMemo(() => {
         if (!liveSpots.length) return viewportSpots;
+        
         const statusMap = new Map(liveSpots.map((s) => [s.id, s.status]));
-        return viewportSpots.map((s) =>
+        
+        const updatedSpots = viewportSpots.map((s) =>
             statusMap.has(s.id) ? { ...s, status: statusMap.get(s.id)! } : s
         );
+        
+        return updatedSpots;
     }, [viewportSpots, liveSpots]);
 
-    const availableSpots = useMemo(() => merged.filter(isAvailable), [merged]);
+    const availableSpots = useMemo(() => {
+        const available = merged.filter(isAvailable);
+        return available;
+    }, [merged]);
 
     return (
         <div className="h-screen w-screen flex flex-col">
