@@ -14,7 +14,6 @@ export type Tab = "all" | "free" | "paid";
 export default function App() {
     const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000/api";
 
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [tab, setTab] = useState<Tab>("all"); // <-- lifted tab
 
@@ -55,9 +54,6 @@ export default function App() {
     return (
         <div className="h-screen w-screen flex flex-col">
             <Header
-                isAuthenticated={isAuthenticated}
-                onLogin={() => setIsAuthenticated(true)}
-                onLogout={() => setIsAuthenticated(false)}
                 isDark={isDark}
                 toggleTheme={toggleTheme}
             />
@@ -95,7 +91,6 @@ export default function App() {
                 </div>
 
                 <Sidebar
-                    isAuthenticated={isAuthenticated}
                     spots={availableSpots}
                     userCoords={coords || undefined}
                     isOpen={isSidebarOpen}

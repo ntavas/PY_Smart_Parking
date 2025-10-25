@@ -5,6 +5,18 @@ class UserService:
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
 
+    async def login(self, email: str, password: str):
+        """Authenticate user with email and password"""
+        user = await self.user_repo.get_user_by_email(email)
+        if not user:
+            raise ValueError("Invalid email or password")
+        
+        # Verify password
+        if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+            raise ValueError("Invalid email or password")
+        
+        return user
+
     async def get_all_users(self):
         return await self.user_repo.get_all_users()
 

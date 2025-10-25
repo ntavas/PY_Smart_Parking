@@ -4,9 +4,9 @@ import { isAvailable, isPaid, isFree } from "../types/parking";
 import SpotList from "./spots/SpotList.tsx";
 import { useMemo } from "react";
 import type { Tab } from "../App";
+import { useAuth } from "../contexts/AuthContext";
 
 type Props = {
-    isAuthenticated: boolean;
     spots: ParkingSpot[];
     userCoords?: { lat: number; lng: number };
     isOpen?: boolean;
@@ -16,7 +16,6 @@ type Props = {
 };
 
 export default function Sidebar({
-    isAuthenticated,
     spots,
     userCoords,
     isOpen = true,
@@ -24,6 +23,7 @@ export default function Sidebar({
     selectedTab,
     onChangeTab,
 }: Props) {
+    const { isAuthenticated } = useAuth();
     const filtered = useMemo(() => {
         const avail = spots.filter(isAvailable);
         if (selectedTab === "free") return avail.filter(isFree);
