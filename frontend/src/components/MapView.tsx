@@ -3,8 +3,9 @@ import "leaflet/dist/leaflet.css";
 import L, { type LatLngExpression } from "leaflet";
 import type { ParkingSpot } from "../types/parking";
 import { isAvailable } from "../types/parking";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { Tab } from "../App";
+import { type SearchResult } from "./SearchModal";
 
 const DefaultIcon = L.icon({
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -30,6 +31,41 @@ const UserIcon = L.icon({
     iconSize: [25, 41],
     iconAnchor: [12, 41],
 });
+
+// This component now manages its own "has flown" state to prevent re-triggers.
+function FlyTo({ center, zoom, onFlyEnd }: { center: LatLngExpression; zoom: number; onFlyEnd: () => void }) {
+    const map = useMap();
+    // useRef is used to track if the flight has already been performed for this search result.
+    // This prevents the effect from re-running if the parent component re-renders.
+    const hasFlownRef = useRef(false);
+
+    useEffect(() => {
+        // Only fly if we haven't already for this specific search instance.
+        if (!hasFlownRef.current) {
+            hasFlownRef.current = true; // Mark as "flying" immediately.
+
+            const handleMoveEnd = () => {
+                // Once the flight is complete, call the handler to reset the parent state.
+                onFlyEnd();
+                // IMPORTANT: Clean up the listener to avoid it firing on subsequent map moves.
+                map.off('moveend', handleMoveEnd);
+            };
+
+            map.on('moveend', handleMoveEnd);
+            map.flyTo(center, zoom, {
+                animate: true,
+                duration: 1.5,
+            });
+
+            // Cleanup function in case the component unmounts mid-flight.
+            return () => {
+                map.off('moveend', handleMoveEnd);
+            };
+        }
+    }, [center, zoom, map, onFlyEnd]);
+
+    return null;
+}
 
 const LIGHT_TILES = {
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -114,6 +150,8 @@ type Props = {
     isDark?: boolean;
     selectedTab: Tab;
     isAuthenticated?: boolean;
+    searchResult?: SearchResult | null;
+    onSearchResultHandled: () => void; // Callback to clear the search result
 };
 
 export default function MapView({
@@ -122,7 +160,9 @@ export default function MapView({
     onBounds,
     isDark = false,
     selectedTab,
-    isAuthenticated = false
+    isAuthenticated = false,
+    searchResult,
+    onSearchResultHandled, // Receive the callback
 }: Props) {
     const center: LatLngExpression = userCoords ? [userCoords.lat, userCoords.lng] : [37.9838, 23.7275];
     const tiles = isDark ? DARK_TILES : LIGHT_TILES;
@@ -144,12 +184,21 @@ export default function MapView({
             <MapContainer
                 center={center}
                 zoom={13}
-                scrollWheelZoom
+                scrollWheelZoom={true}
                 className="h-full w-full"
                 zoomControl={false}
             >
-                <TileLayer url={tiles.url} attribution={tiles.attribution} />
+                {/* When a search result exists, render the FlyTo component */}
+                {searchResult && (
+                    <FlyTo
+                        center={[searchResult.latitude, searchResult.longitude]}
+                        zoom={16}
+                        onFlyEnd={onSearchResultHandled} // Pass the handler to be called on completion
+                    />
+                )}
+                <TileLayer {...tiles} />
                 <UseBounds onBounds={onBounds} />
+                <MapControls />
 
                 {userCoords && (
                     <Marker position={[userCoords.lat, userCoords.lng]} icon={UserIcon}>
@@ -197,8 +246,6 @@ export default function MapView({
                         </Marker>
                     );
                 })}
-
-                <MapControls />
             </MapContainer>
         </div>
     );

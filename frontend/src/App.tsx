@@ -8,6 +8,7 @@ import { useLiveSpots } from "./hooks/useLiveSpots";
 import { useViewportSpots } from "./hooks/useViewportSpots";
 import type { ParkingSpot } from "./types/parking";
 import { isAvailable } from "./types/parking";
+import SearchModal, { type SearchResult } from "./components/SearchModal";
 
 export type Tab = "all" | "free" | "paid";
 
@@ -15,6 +16,8 @@ export default function App() {
     const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000/api";
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+    const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
     const [tab, setTab] = useState<Tab>("all"); // <-- lifted tab
 
     const { isDark, toggleTheme } = useTheme();
@@ -51,25 +54,20 @@ export default function App() {
         return available;
     }, [merged]);
 
+    const handleSearch = (result: SearchResult) => {
+        setSearchResult(result);
+    };
+
     return (
         <div className="h-screen w-screen flex flex-col">
             <Header
                 isDark={isDark}
                 toggleTheme={toggleTheme}
+                onSearchClick={() => setIsSearchModalOpen(true)}
             />
 
             <div className="flex flex-1 overflow-hidden relative">
                 <div className="flex-1 relative">
-                    {/* Search input (read-only placeholder) */}
-                    <div className="absolute top-2 left-2 right-16 z-[1000] md:top-4 md:left-4 md:right-auto md:w-80">
-                        <input
-                            type="text"
-                            placeholder="Search for parking spots…"
-                            className="w-full rounded-md border border-gray-200 bg-white/90 backdrop-blur px-3 py-2 text-sm shadow-sm outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800/90 dark:border-gray-700 dark:text-gray-100 md:px-4"
-                            readOnly
-                        />
-                    </div>
-
                     {/* Mobile toggle button */}
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -86,7 +84,9 @@ export default function App() {
                         spots={merged}
                         onBounds={setBounds}
                         isDark={isDark}
-                        selectedTab={tab}            // <-- pass tab to map
+                        selectedTab={tab}
+                        searchResult={searchResult}
+                        onSearchResultHandled={() => setSearchResult(null)}
                     />
                 </div>
 
@@ -105,6 +105,14 @@ export default function App() {
                         onClick={() => setIsSidebarOpen(false)}
                     />
                 )}
+
+                <SearchModal
+                    isOpen={isSearchModalOpen}
+                    onClose={() => setIsSearchModalOpen(false)}
+                    onSearch={handleSearch}
+                    isDark={isDark}
+                    apiBase={API_BASE}
+                />
             </div>
         </div>
     );

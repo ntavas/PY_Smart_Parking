@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 class ParkingSpotCreate(BaseModel):
     location: str
@@ -21,6 +21,8 @@ class ParkingSpotResponse(BaseModel):
     status: str
     last_updated: str | None
     price_per_hour: Optional[float] = None
+    city: Optional[str] = None
+    area: Optional[str] = None
 
 class SpotStatusLogCreate(BaseModel):
     spot_id: int
@@ -38,3 +40,12 @@ class SpotStatusLogResponse(BaseModel):
 class ViewportResponse(BaseModel):
     spots: List[ParkingSpotResponse]
     total: int
+
+class SearchResult(BaseModel):
+    id: int
+    latitude: float
+    longitude: float
+
+class LocationsResponse(BaseModel):
+    cities: List[str]
+    areas: Dict[str, List[str]]

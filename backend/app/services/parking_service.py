@@ -1,6 +1,7 @@
 from app.repositories.parking_repository import ParkingRepository
 from app.models import ParkingSpot
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -39,3 +40,12 @@ class ParkingService:
         spots = await self.repo.get_spots_in_viewport(sw_lat, sw_lng, ne_lat, ne_lng, status, limit)
         logger.info("Fetched from DB")
         return spots
+
+    async def get_distinct_locations(self):
+        return await self.repo.get_distinct_locations()
+
+    async def search_spots(self, city: str, area: str, is_free: Optional[bool]):
+        spot_data = await self.repo.search_spots(city, area, is_free)
+        if not spot_data:
+            raise ValueError("No available spots found for the selected criteria.")
+        return spot_data

@@ -11,6 +11,8 @@ class ParkingSpot(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     location = Column(String(100), nullable=False)
+    city = Column(String(50), nullable=True)
+    area = Column(String(50), nullable=True)
     status = Column(String(20), nullable=False, default="Available")
     last_updated = Column(DateTime(timezone=False), server_default=func.now())
 

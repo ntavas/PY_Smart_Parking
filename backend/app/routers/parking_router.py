@@ -11,6 +11,8 @@ from app.dtos.parking_dto import (
     ParkingSpotUpdate,
     ParkingSpotResponse,
     ViewportResponse,
+    LocationsResponse,
+    SearchResult,
 )
 
 #add logger
@@ -43,6 +45,8 @@ async def get_spots_viewport(
         location=s.location,
         status=s.status,
         price_per_hour=s.price_per_hour,
+        city=s.city,
+        area=s.area,
         last_updated=s.last_updated.isoformat() if s.last_updated else None
     ) for s in spots]
     return ViewportResponse(spots=dtos, total=len(dtos))
@@ -84,3 +88,30 @@ async def update_spot(spot_id: int, updates: ParkingSpotUpdate, service: Parking
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/locations", response_model=LocationsResponse)
+async def get_locations(service: ParkingService = Depends(get_parking_service)):
+    """ Returns a structured list of distinct cities and their corresponding areas. """
+    try:
+        cities, areas = await service.get_distinct_locations()
+        return LocationsResponse(cities=cities, areas=areas)
+    except Exception as e:
+        logger.error(f"Failed to get locations: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/search", response_model=SearchResult)
+async def search_spots(
+    city: str = Query(..., description="City to search in"),
+    area: str = Query(..., description="Area to search in"),
+    is_free: Optional[bool] = Query(None, description="Filter for free spots"),
+    service: ParkingService = Depends(get_parking_service),
+):
+    """ Searches for an available spot and returns its coordinates for map navigation. """
+    try:
+        spot_id, lat, lng = await service.search_spots(city, area, is_free)
+        return SearchResult(id=spot_id, latitude=lat, longitude=lng)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Search failed for {city}/{area}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

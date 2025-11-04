@@ -264,3 +264,48 @@ class ParkingRepository:
         # Redis cleanup
         await redis_client.hdel(f"spot:{spot_id}", "price_per_hour")
         await redis_client.srem("spots:paid", spot_id)
+
+    async def get_distinct_locations(self) -> Tuple[List[str], Dict[str, List[str]]]:
+        """ Fetches distinct cities and areas for search filters. """
+        # Get all distinct non-null city/area pairs
+        query = select(ParkingSpot.city, ParkingSpot.area).distinct().where(ParkingSpot.city != None, ParkingSpot.area != None)
+        res = await self.db.execute(query)
+        rows = res.all()
+
+        cities = sorted(list(set(r[0] for r in rows)))
+        areas: Dict[str, List[str]] = {city: [] for city in cities}
+        for city, area in rows:
+            if area not in areas[city]:
+                areas[city].append(area)
+        
+        for city in areas:
+            areas[city].sort()
+            
+        return cities, areas
+
+    async def search_spots(
+        self,
+        city: str,
+        area: str,
+        is_free: Optional[bool] = None
+    ) -> Optional[Tuple[int, float, float]]:
+        """ Finds the first available spot matching criteria and returns its id and coordinates. """
+        query = select(ParkingSpot.id, ParkingSpot.latitude, ParkingSpot.longitude).where(
+            ParkingSpot.city == city,
+            ParkingSpot.area == area,
+            ParkingSpot.status == "Available"
+        )
+
+        if is_free is not None:
+            if is_free:
+                # It's free if it's NOT in the paid_parking table
+                query = query.outerjoin(PaidParking).where(PaidParking.spot_id == None)
+            else:
+                # It's paid if it's IN the paid_parking table
+                query = query.join(PaidParking)
+
+        query = query.limit(1)
+        res = await self.db.execute(query)
+        result = res.first()
+
+        return result if result else None

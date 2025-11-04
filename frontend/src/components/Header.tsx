@@ -8,11 +8,12 @@ import { UserMenu } from './ui/UserMenu';
 type Props = {
     isDark: boolean;
     toggleTheme: () => void;
+    onSearchClick: () => void;
 };
 
 type AuthModalView = 'login' | 'register';
 
-export default function Header({ isDark, toggleTheme }: Props) {
+export default function Header({ isDark, toggleTheme, onSearchClick }: Props) {
     const { isAuthenticated } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authModalView, setAuthModalView] = useState<AuthModalView>('login');
@@ -48,7 +49,18 @@ export default function Header({ isDark, toggleTheme }: Props) {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 md:gap-4">
+                        {/* Search Button */}
+                        <button
+                            onClick={onSearchClick}
+                            className="p-2 rounded-full text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                            aria-label="Search for parking"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+
                         {/* Theme Toggle */}
                         <button
                             onClick={toggleTheme}
