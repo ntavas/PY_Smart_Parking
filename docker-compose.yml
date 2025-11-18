@@ -24,11 +24,11 @@ services:
     container_name: redis-insight
     restart: on-failure
     ports:
-      - "5540:5540"        # UI at http://localhost:5540
+      - "5540:5540"
     depends_on:
       - redis
     volumes:
-      - ./redisinsight_data:/data  # persist RI settings (saved connections, etc.)
+      - ./redisinsight_data:/data
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: mqtt-broker
@@ -61,4 +61,19 @@ services:
       - REDIS_DB=0
     volumes:
       - ./backend:/app  # Mount for development adjustments if needed
+    restart: on-failure
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smart-parking-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app  # Mount for development adjustments
+      - /app/node_modules  # Prevent overwriting node_modules
     restart: on-failure

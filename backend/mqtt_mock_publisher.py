@@ -3,12 +3,12 @@ import time
 from typing import Dict, List
 import signal
 import sys
-
+import os
 import paho.mqtt.client as mqtt
 
 # ---------- CONFIG ----------
-BROKER_HOST = "host.docker.internal"   # docker container
-BROKER_PORT = 1883
+BROKER_HOST = os.getenv("MQTT_HOST", "localhost")
+BROKER_PORT = int(os.getenv("MQTT_PORT", "1883"))
 CITIES: List[str] = ["Athens", "Larissa"]
 SPOT_ID_MIN = 1
 SPOT_ID_MAX = 24
@@ -54,8 +54,25 @@ def on_disconnect(client, userdata, rc):
 def run():
     client = mqtt.Client()
     client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.connect(BROKER_HOST, BROKER_PORT, keepalive=60)
+
+    # Retry connection with exponential backoff
+    max_retries = 10
+    retry_delay = 2
+    for attempt in range(max_retries):
+        try:
+            print(f"[MQTT] Attempting to connect to {BROKER_HOST}:{BROKER_PORT} (attempt {attempt + 1}/{max_retries})...")
+            client.connect(BROKER_HOST, BROKER_PORT, keepalive=60)
+            client.loop_start()
+            print(f"[MQTT] Connection successful!")
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"[MQTT] Connection failed: {e}. Retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+                retry_delay = min(retry_delay * 2, 30)  # Exponential backoff, max 30s
+            else:
+                print(f"[MQTT] Failed to connect after {max_retries} attempts. Exiting.")
+                sys.exit(1)
     client.loop_start()
 
     def stop(signum, frame):

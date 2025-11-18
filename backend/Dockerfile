@@ -9,10 +9,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy all code
-COPY alembic .
+COPY . .
 
 # Expose port
 EXPOSE 8000
 
-# Command to run (matches docker-compose)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copy startup script
+COPY start.sh .
+RUN chmod +x start.sh
+
+# Command to run both services
+CMD ["./start.sh"]

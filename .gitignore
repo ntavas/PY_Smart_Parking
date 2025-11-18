@@ -6,3 +6,5 @@
 .idea
 venv/
 /redisinsight_data/
+.venv/
+redis_data
