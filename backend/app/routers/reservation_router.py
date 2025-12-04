@@ -7,9 +7,12 @@ from app.dtos.reservation_dto import ReservationCreate, ReservationUpdate, Reser
 
 router = APIRouter(prefix="/reservations", tags=["reservations"])
 
+from app.repositories.parking_repository import ParkingRepository
+
 def get_reservation_service(db: AsyncSession = Depends(get_db)) -> ReservationService:
     repo = ReservationRepository(db)
-    return ReservationService(repo)
+    parking_repo = ParkingRepository(db)
+    return ReservationService(repo, parking_repo)
 
 @router.get("/", response_model=list[ReservationResponse])
 async def get_all_reservations(service: ReservationService = Depends(get_reservation_service)):
@@ -34,9 +37,7 @@ async def get_reservations_by_spot(spot_id: int, service: ReservationService = D
 async def create_reservation(reservation: ReservationCreate, service: ReservationService = Depends(get_reservation_service)):
     return await service.create_reservation(
         reservation.user_id, 
-        reservation.spot_id, 
-        reservation.start_time, 
-        reservation.end_time
+        reservation.spot_id
     )
 
 @router.put("/{reservation_id}", response_model=ReservationResponse)

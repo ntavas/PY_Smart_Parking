@@ -1,10 +1,13 @@
 from app.repositories.reservation_repository import ReservationRepository
-from datetime import datetime
+from app.repositories.parking_repository import ParkingRepository
+from datetime import datetime, timedelta
 from typing import Optional
+import asyncio
 
 class ReservationService:
-    def __init__(self, repo: ReservationRepository):
+    def __init__(self, repo: ReservationRepository, parking_repo: ParkingRepository):
         self.repo = repo
+        self.parking_repo = parking_repo
 
     async def get_all_reservations(self):
         return await self.repo.get_all_reservations()
@@ -21,8 +24,40 @@ class ReservationService:
     async def get_reservations_by_spot_id(self, spot_id: int):
         return await self.repo.get_reservations_by_spot_id(spot_id)
 
-    async def create_reservation(self, user_id: int, spot_id: int, start_time: datetime, end_time: Optional[datetime] = None):
-        return await self.repo.create_reservation(user_id, spot_id, start_time, end_time)
+    async def create_reservation(self, user_id: int, spot_id: int, start_time: Optional[datetime] = None, end_time: Optional[datetime] = None):
+        # 1. Check if spot exists and is available
+        spot = await self.parking_repo.get_spot_by_id(spot_id)
+        if not spot:
+            raise ValueError("Parking spot not found")
+        
+        if spot.status != "Available":
+            raise ValueError(f"Spot is currently {spot.status}")
+
+        # 2. Set times (30 seconds for testing)
+        now = datetime.utcnow()
+        if not start_time:
+            start_time = now
+        if not end_time:
+            end_time = now + timedelta(seconds=30) # Testing duration
+
+        # 3. Create reservation
+        reservation = await self.repo.create_reservation(user_id, spot_id, start_time, end_time)
+
+        # 4. Update spot status to Reserved
+        await self.parking_repo.update_spot_status(spot_id, "Reserved")
+
+        # 5. Schedule expiration
+        asyncio.create_task(self._expire_reservation(spot_id, 30))
+
+        return reservation
+
+    async def _expire_reservation(self, spot_id: int, delay_seconds: int):
+        await asyncio.sleep(delay_seconds)
+        # Check if still reserved (might have been paid/occupied in real scenario, but for now just revert)
+        spot = await self.parking_repo.get_spot_by_id(spot_id)
+        if spot and spot.status == "Reserved":
+            await self.parking_repo.update_spot_status(spot_id, "Available")
+            print(f"Reservation expired for spot {spot_id}, status reverted to Available")
 
     async def update_reservation(self, reservation_id: int, **updates):
         reservation = await self.repo.update_reservation(reservation_id, **updates)
@@ -34,4 +69,11 @@ class ReservationService:
         reservation = await self.repo.delete_reservation(reservation_id)
         if not reservation:
             raise ValueError("Reservation not found")
+        
+        # Also revert spot status if it was reserved
+        if reservation.spot_id:
+             spot = await self.parking_repo.get_spot_by_id(reservation.spot_id)
+             if spot and spot.status == "Reserved":
+                 await self.parking_repo.update_spot_status(reservation.spot_id, "Available")
+
         return reservation

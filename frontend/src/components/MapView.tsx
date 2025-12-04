@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { Tab } from "../App";
 import { type SearchResult } from "./SearchModal";
 import { useFavorites } from "../contexts/FavoritesContext";
+import { useReservation } from "../hooks/useReservation";
 
 const DefaultIcon = L.icon({
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -184,10 +185,7 @@ export default function MapView({
         return avail;
     }, [spots, selectedTab]);
 
-    const handleReserve = useCallback((spot: ParkingSpot) => {
-        console.log("Reserve clicked for spot", spot.id);
-        alert("Reservation flow will be implemented next ✅");
-    }, []);
+    const { handleReserve } = useReservation();
 
     const toggleFavorite = useCallback(async (spot: ParkingSpot) => {
         if (isFavorite(spot.id)) {
@@ -273,12 +271,24 @@ export default function MapView({
                                     )}
 
                                     {isAuthenticated && (
-                                        <div className="mt-3">
+                                        <div className="mt-3 grid grid-cols-2 gap-2">
                                             <button
-                                                onClick={() => handleReserve(s)}
-                                                className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleReserve(s);
+                                                }}
+                                                className="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
                                             >
-                                                Reserve (10 min)
+                                                Reserve
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.latitude},${s.longitude}`, '_blank');
+                                                }}
+                                                className="px-3 py-1.5 text-sm font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm"
+                                            >
+                                                Navigate
                                             </button>
                                         </div>
                                     )}

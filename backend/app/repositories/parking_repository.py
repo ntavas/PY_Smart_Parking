@@ -309,3 +309,37 @@ class ParkingRepository:
         result = res.first()
 
         return result if result else None
+    async def update_spot_status(self, spot_id: int, new_status: str) -> Optional[ParkingSpot]:
+        spot = await self.db.get(ParkingSpot, spot_id)
+        if not spot:
+            return None
+        
+        old_status = spot.status
+        spot.status = new_status
+        spot.last_updated = datetime.utcnow()
+        await self.db.commit()
+        await self.db.refresh(spot)
+
+        # Update Redis
+        try:
+            # Update Hash
+            await redis_client.hset(f"spot:{spot_id}", mapping={
+                "status": new_status,
+                "last_updated": spot.last_updated.isoformat()
+            })
+
+            # Update Status Sets
+            await redis_client.srem(f"spots:by_status:{old_status}", spot_id)
+            await redis_client.sadd(f"spots:by_status:{new_status}", spot_id)
+
+            # Update Geo Index
+            # Remove from old status geo key
+            await redis_client.zrem(f"spots:geo:{old_status}", f"spot_{spot_id}")
+            # Add to new status geo key
+            if spot.longitude is not None and spot.latitude is not None:
+                await redis_client.geoadd(f"spots:geo:{new_status}", float(spot.longitude), float(spot.latitude), f"spot_{spot_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to update Redis for spot {spot_id}: {e}")
+
+        return spot

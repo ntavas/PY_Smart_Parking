@@ -1,5 +1,6 @@
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useReservation } from '../../hooks/useReservation';
 import React from 'react';
 
 type Props = {
@@ -26,6 +27,7 @@ export default function SpotListItem({
     const isPaid = pricePerHour != null && !Number.isNaN(pricePerHour);
     const { isFavorite, addFavorite, removeFavorite } = useFavorites();
     const { isAuthenticated } = useAuth();
+    const { handleReserve } = useReservation();
     const isFav = isFavorite(id);
 
     const toggleFavorite = async (e: React.MouseEvent) => {
@@ -90,15 +92,21 @@ export default function SpotListItem({
                 <div className="flex flex-col gap-2 ml-3">
                     {showReserve && (
                         <button
-                            className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                            disabled
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleReserve({ id, name, address, pricePerHour, latitude: 0, longitude: 0, location: name, status: status as any } as any); // Partial object, careful
+                            }}
+                            className="px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
                         >
                             Reserve
                         </button>
                     )}
                     <button
-                        onClick={onNavigate}
-                        className="px-3 py-1.5 text-sm rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onNavigate) onNavigate();
+                        }}
+                        className="px-3 py-1.5 text-sm font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm"
                     >
                         Navigate
                     </button>
