@@ -61,3 +61,12 @@ class UserService:
         if not user:
             raise ValueError("User not found")
         return user
+
+    async def add_favorite(self, user_id: int, spot_id: int):
+        await self.user_repo.add_favorite(user_id, spot_id)
+
+    async def remove_favorite(self, user_id: int, spot_id: int):
+        await self.user_repo.remove_favorite(user_id, spot_id)
+
+    async def get_favorites(self, user_id: int):
+        return await self.user_repo.get_favorites(user_id)

@@ -1,37 +1,85 @@
-// components/spots/SpotListItem.tsx
+import { useFavorites } from '../../contexts/FavoritesContext';
+import { useAuth } from '../../contexts/AuthContext';
+import React from 'react';
+
 type Props = {
+    id: number;
     name: string;
     address: string;
     pricePerHour: number | null;
     minutesWalk: number | null;
     showReserve: boolean;
     onNavigate?: () => void;
+    status: string;
 };
 
 export default function SpotListItem({
+    id,
     name,
     address,
     pricePerHour,
     minutesWalk,
     showReserve,
     onNavigate,
+    status,
 }: Props) {
     const isPaid = pricePerHour != null && !Number.isNaN(pricePerHour);
+    const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+    const { isAuthenticated } = useAuth();
+    const isFav = isFavorite(id);
+
+    const toggleFavorite = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isFav) {
+            await removeFavorite(id);
+        } else {
+            await addFavorite(id);
+        }
+    };
+
+    const getStatusColor = (s: string) => {
+        switch (s.toLowerCase()) {
+            case 'free': return 'text-green-600 dark:text-green-400';
+            case 'occupied': return 'text-red-600 dark:text-red-400';
+            default: return 'text-gray-600 dark:text-gray-400';
+        }
+    };
 
     return (
-        <div className="rounded-lg border border-gray-400 bg-white p-4 shadow-sm dark:border-gray-500 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-400 bg-white p-4 shadow-sm dark:border-gray-500 dark:bg-gray-800 relative">
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{name}</h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{name}</h3>
+                        {isAuthenticated && (
+                            <button
+                                onClick={toggleFavorite}
+                                className="text-yellow-500 hover:text-yellow-600 focus:outline-none"
+                            >
+                                {isFav ? (
+                                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-5 h-5 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                    </svg>
+                                )}
+                            </button>
+                        )}
+                    </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{address}</p>
 
-                    <div className="mt-2 flex items-center gap-4 text-sm">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                        <span className={`font-medium ${getStatusColor(status)}`}>
+                            {status}
+                        </span>
                         {isPaid ? (
                             <span className="text-blue-600 dark:text-blue-400 font-medium">
-                                €{pricePerHour!.toFixed(2)}/hr • Paid
+                                €{pricePerHour!.toFixed(2)}/hr
                             </span>
                         ) : (
-                            <span className="text-green-600 dark:text-green-400 font-medium">Free parking</span>
+                            <span className="text-green-600 dark:text-green-400 font-medium">Free</span>
                         )}
                         {minutesWalk !== null && (
                             <span className="text-gray-500 dark:text-gray-400">{minutesWalk} min drive</span>

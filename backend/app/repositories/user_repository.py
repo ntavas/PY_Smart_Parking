@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models import User
+from app.models import User, UserFavorites
+from app.database import redis_client
 from typing import List, Optional
 
 class UserRepository:
@@ -42,3 +43,51 @@ class UserRepository:
             await self.db.delete(user)
             await self.db.commit()
         return user
+
+    async def add_favorite(self, user_id: int, spot_id: int) -> None:
+        # DB
+        stmt = select(UserFavorites).where(
+            UserFavorites.user_id == user_id, 
+            UserFavorites.spot_id == spot_id
+        )
+        existing = await self.db.execute(stmt)
+        if not existing.scalar_one_or_none():
+            fav = UserFavorites(user_id=user_id, spot_id=spot_id)
+            self.db.add(fav)
+            await self.db.commit()
+
+        # Redis
+        await redis_client.sadd(f"user:{user_id}:favorites", spot_id)
+
+    async def remove_favorite(self, user_id: int, spot_id: int) -> None:
+        # DB
+        stmt = select(UserFavorites).where(
+            UserFavorites.user_id == user_id, 
+            UserFavorites.spot_id == spot_id
+        )
+        result = await self.db.execute(stmt)
+        fav = result.scalar_one_or_none()
+        if fav:
+            await self.db.delete(fav)
+            await self.db.commit()
+
+        # Redis
+        await redis_client.srem(f"user:{user_id}:favorites", spot_id)
+
+    async def get_favorites(self, user_id: int) -> List[int]:
+        # Try Redis first
+        key = f"user:{user_id}:favorites"
+        members = await redis_client.smembers(key)
+        if members:
+            return [int(m) for m in members]
+
+        # Fallback to DB
+        stmt = select(UserFavorites.spot_id).where(UserFavorites.user_id == user_id)
+        result = await self.db.execute(stmt)
+        spot_ids = result.scalars().all()
+        
+        # Populate Redis
+        if spot_ids:
+            await redis_client.sadd(key, *spot_ids)
+        
+        return list(spot_ids)

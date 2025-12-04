@@ -9,11 +9,12 @@ type Props = {
     isDark: boolean;
     toggleTheme: () => void;
     onSearchClick: () => void;
+    onFavoritesClick: () => void;
 };
 
 type AuthModalView = 'login' | 'register';
 
-export default function Header({ isDark, toggleTheme, onSearchClick }: Props) {
+export default function Header({ isDark, toggleTheme, onSearchClick, onFavoritesClick }: Props) {
     const { isAuthenticated } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authModalView, setAuthModalView] = useState<AuthModalView>('login');
@@ -61,6 +62,7 @@ export default function Header({ isDark, toggleTheme, onSearchClick }: Props) {
                             </svg>
                         </button>
 
+
                         {/* Theme Toggle */}
                         <button
                             onClick={toggleTheme}
@@ -72,7 +74,7 @@ export default function Header({ isDark, toggleTheme, onSearchClick }: Props) {
 
                         {/* Auth Button / User Menu */}
                         {isAuthenticated ? (
-                            <UserMenu />
+                            <UserMenu onFavoritesClick={onFavoritesClick} />
                         ) : (
                             <button
                                 onClick={handleOpenLogin}

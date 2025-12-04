@@ -3,7 +3,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Modal } from '../ui/Modal';
 import { ChangePasswordForm } from '../auth/ChangePasswordForm';
 
-export const UserMenu: React.FC = () => {
+interface Props {
+  onFavoritesClick?: () => void;
+}
+
+export const UserMenu: React.FC<Props> = ({ onFavoritesClick }) => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
@@ -39,8 +43,9 @@ export const UserMenu: React.FC = () => {
   };
 
   const handleFavorites = () => {
-    // TODO: implement favorite parking spots functionality
-    console.log('Navigate to favorite parking spots');
+    if (onFavoritesClick) {
+      onFavoritesClick();
+    }
     setIsMenuOpen(false);
   };
 

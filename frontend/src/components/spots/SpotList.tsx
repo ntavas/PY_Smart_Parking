@@ -49,12 +49,14 @@ export default function SpotList({ spots, userCoords, showReserve, computeWalkMi
                         return (
                             <SpotListItem
                                 key={s.id}
+                                id={s.id}
                                 name={s.location}
                                 address={s.location}
                                 pricePerHour={s.pricePerHour ?? null}
                                 minutesWalk={mins}
                                 showReserve={showReserve}
                                 onNavigate={() => handleNavigate(s)}
+                                status={s.status}
                             />
                         );
                     })}

@@ -6,6 +6,7 @@ import { isAvailable } from "../types/parking";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { Tab } from "../App";
 import { type SearchResult } from "./SearchModal";
+import { useFavorites } from "../contexts/FavoritesContext";
 
 const DefaultIcon = L.icon({
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -26,6 +27,14 @@ const FreeIcon = L.icon({
 
 const UserIcon = L.icon({
     iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+});
+
+const FavoriteIcon = L.icon({
+    iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png",
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
     iconSize: [25, 41],
     iconAnchor: [12, 41],
@@ -166,6 +175,7 @@ export default function MapView({
 }: Props) {
     const center: LatLngExpression = userCoords ? [userCoords.lat, userCoords.lng] : [37.9838, 23.7275];
     const tiles = isDark ? DARK_TILES : LIGHT_TILES;
+    const { isFavorite, addFavorite, removeFavorite } = useFavorites();
 
     const markers = useMemo(() => {
         const avail = spots.filter(isAvailable);
@@ -178,6 +188,14 @@ export default function MapView({
         console.log("Reserve clicked for spot", spot.id);
         alert("Reservation flow will be implemented next ✅");
     }, []);
+
+    const toggleFavorite = useCallback(async (spot: ParkingSpot) => {
+        if (isFavorite(spot.id)) {
+            await removeFavorite(spot.id);
+        } else {
+            await addFavorite(spot.id);
+        }
+    }, [isFavorite, addFavorite, removeFavorite]);
 
     return (
         <div className="h-full w-full relative">
@@ -210,13 +228,36 @@ export default function MapView({
 
                 {markers.map((s) => {
                     const isPaid = s.pricePerHour != null;
-                    const icon = isPaid ? DefaultIcon : FreeIcon;
+                    const isFav = isFavorite(s.id);
+                    const icon = isFav ? FavoriteIcon : (isPaid ? DefaultIcon : FreeIcon);
 
                     return (
                         <Marker key={s.id} position={[s.latitude, s.longitude]} icon={icon}>
                             <Popup offset={[0, -18]}>
                                 <div className="text-sm">
-                                    <div className="font-medium">{s.location}</div>
+                                    <div className="flex justify-between items-start">
+                                        <div className="font-medium">{s.location}</div>
+                                        {isAuthenticated && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleFavorite(s);
+                                                }}
+                                                className="text-yellow-500 hover:text-yellow-600 focus:outline-none z-[1000] relative p-1"
+                                                title={isFav ? "Remove from favorites" : "Add to favorites"}
+                                            >
+                                                {isFav ? (
+                                                    <svg className="w-6 h-6 fill-current drop-shadow-sm" viewBox="0 0 24 24">
+                                                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg className="w-6 h-6 stroke-current fill-none drop-shadow-sm" viewBox="0 0 24 24" strokeWidth="2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
                                     <div className="mt-2">
                                         Status: <span className="font-semibold text-green-600">{s.status}</span>
                                     </div>

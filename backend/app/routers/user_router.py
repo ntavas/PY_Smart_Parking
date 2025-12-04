@@ -46,3 +46,23 @@ async def delete_user(user_id: int, service: UserService = Depends(get_user_serv
         return await service.delete_user(user_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+@router.post("/{user_id}/favorites/{spot_id}")
+async def add_favorite(user_id: int, spot_id: int, service: UserService = Depends(get_user_service)):
+    try:
+        await service.add_favorite(user_id, spot_id)
+        return {"message": "Favorite added"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/{user_id}/favorites/{spot_id}")
+async def remove_favorite(user_id: int, spot_id: int, service: UserService = Depends(get_user_service)):
+    try:
+        await service.remove_favorite(user_id, spot_id)
+        return {"message": "Favorite removed"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{user_id}/favorites", response_model=list[int])
+async def get_favorites(user_id: int, service: UserService = Depends(get_user_service)):
+    return await service.get_favorites(user_id)
