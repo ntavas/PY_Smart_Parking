@@ -11,14 +11,20 @@ services:
       - "5432:5432"
     volumes:
       - ./ops/ps-init.sql:/docker-entrypoint-initdb.d/ps-init.sql
-  redis: # Redis for local dev (ElastiCache for presentation)
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres_local -d sm_parking" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis:
+    # Redis for local dev (ElastiCache for presentation)
     image: redis:7-alpine
     container_name: redis-cache
     ports:
       - "6379:6379"
     restart: on-failure
     volumes:
-      - ./redis_data:/data  # Persist data across restarts
+      - ./redis_data:/data # Persist data across restarts
   redisInsight:
     image: redis/redisinsight:latest
     container_name: redis-insight
@@ -47,9 +53,12 @@ services:
       dockerfile: Dockerfile
     container_name: smart-parking-backend
     depends_on:
-      - db
-      - mosquitto
-      - redis
+      db:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+      redis:
+        condition: service_started
     ports:
       - "8000:8000"
     environment:
@@ -60,7 +69,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_DB=0
     volumes:
-      - ./backend:/app  # Mount for development adjustments if needed
+      - ./backend:/app # Mount for development adjustments if needed
     restart: on-failure
   frontend:
     build:
@@ -74,6 +83,6 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8000
     volumes:
-      - ./frontend:/app  # Mount for development adjustments
-      - /app/node_modules  # Prevent overwriting node_modules
+      - ./frontend:/app # Mount for development adjustments
+      - /app/node_modules # Prevent overwriting node_modules
     restart: on-failure

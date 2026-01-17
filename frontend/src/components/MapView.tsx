@@ -207,6 +207,7 @@ export default function MapView({
                 {/* When a search result exists, render the FlyTo component */}
                 {searchResult && (
                     <FlyTo
+                        key={`${searchResult.latitude}-${searchResult.longitude}`}
                         center={[searchResult.latitude, searchResult.longitude]}
                         zoom={16}
                         onFlyEnd={onSearchResultHandled} // Pass the handler to be called on completion

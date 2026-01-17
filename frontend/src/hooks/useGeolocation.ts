@@ -6,15 +6,25 @@ export function useGeolocation() {
     const [coords, setCoords] = useState<Coords | null>(null);
 
     useEffect(() => {
-        if (!('geolocation' in navigator)) return;
+        if (!('geolocation' in navigator)) {
+            return;
+        }
 
-        navigator.geolocation.getCurrentPosition(
+        const watchId = navigator.geolocation.watchPosition(
             (pos) => {
                 setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
             },
-            () => setCoords(null),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            (err) => {
+                console.error("Geolocation error:", err);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 20000,
+                maximumAge: 0
+            }
         );
+
+        return () => navigator.geolocation.clearWatch(watchId);
     }, []);
 
     return { coords };
