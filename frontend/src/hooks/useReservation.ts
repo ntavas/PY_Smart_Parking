@@ -1,3 +1,10 @@
+/**
+ * useReservation.ts - Parking Reservation Hook
+ *
+ * Provides the handleReserve function to reserve a parking spot.
+ * Requires user authentication.
+ */
+
 import { useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';

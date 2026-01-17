@@ -1,22 +1,29 @@
-# Use official Python image
+# =============================================================================
+# Backend Dockerfile - FastAPI Application
+# =============================================================================
+# Builds the Python backend with all dependencies.
+# Uses start.sh to run Uvicorn server on port 8000.
+# =============================================================================
+
+# Use official Python image (slim for smaller size)
 FROM python:3.11-slim
 
-# Set working directory
+# Set working directory inside container
 WORKDIR /app
 
-# Copy requirements and install
+# Copy requirements first (for Docker layer caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all code
+# Copy all application code
 COPY . .
 
-# Expose port
+# Expose FastAPI port
 EXPOSE 8000
 
-# Copy startup script
+# Copy and prepare startup script
 COPY start.sh .
 RUN chmod +x start.sh
 
-# Command to run both services
+# Run the startup script (starts Uvicorn)
 CMD ["./start.sh"]

@@ -1,3 +1,11 @@
+"""
+reservation_router.py - Reservation API Endpoints
+
+Provides REST endpoints for:
+- Creating and managing parking reservations
+- Querying reservations by user or spot
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db

@@ -1,3 +1,17 @@
+"""
+mqtt_consumer.py - Real-time Parking Sensor Handler
+
+This module handles real-time updates from parking sensors via MQTT.
+
+Flow:
+1. Sensors publish status changes to MQTT broker (Mosquitto)
+2. This consumer subscribes and receives those messages
+3. Updates are batched (every 5s) and persisted to DB + Redis
+4. Connected WebSocket clients receive instant notifications
+
+Topic format: parking/<city>/<spot_id>/status
+"""
+
 import asyncio
 import json
 import logging
@@ -13,6 +27,7 @@ from app.constants import VALID_SPOT_STATUSES, VALID_CITIES
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("app.mqtt_consumer")
+
 
 # Global variables for batching
 pending_updates: Dict[int, Dict] = {}

@@ -1,3 +1,14 @@
+/**
+ * MapView.tsx - Interactive Parking Map
+ *
+ * Displays an interactive Leaflet map showing parking spots.
+ * Features:
+ * - User location marker
+ * - Parking spot markers (color-coded: green=free, blue=paid, gold=favorite)
+ * - Fly-to animation when searching for a location
+ * - Real-time updates via WebSocket
+ */
+
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L, { type LatLngExpression } from "leaflet";
@@ -209,7 +220,7 @@ export default function MapView({
                     <FlyTo
                         key={`${searchResult.latitude}-${searchResult.longitude}`}
                         center={[searchResult.latitude, searchResult.longitude]}
-                        zoom={16}
+                        zoom={searchResult.zoom ?? 16}
                         onFlyEnd={onSearchResultHandled} // Pass the handler to be called on completion
                     />
                 )}

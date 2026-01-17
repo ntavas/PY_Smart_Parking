@@ -1,3 +1,9 @@
+/**
+ * user.ts - User-related Type Definitions
+ *
+ * Defines TypeScript interfaces for user data and form inputs.
+ */
+
 export interface User {
   id: number;
   email: string;

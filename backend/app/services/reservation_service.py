@@ -1,3 +1,12 @@
+"""
+reservation_service.py - Reservation Business Logic
+
+Manages parking spot reservations including:
+- Creating reservations (with spot availability check)
+- Automatic expiration after timeout
+- Status updates to parking spots
+"""
+
 from app.repositories.reservation_repository import ReservationRepository
 from app.repositories.parking_repository import ParkingRepository
 from datetime import datetime, timedelta

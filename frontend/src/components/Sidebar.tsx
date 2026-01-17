@@ -1,3 +1,12 @@
+/**
+ * Sidebar.tsx - Parking Spots List Panel
+ *
+ * Shows a filterable list of available parking spots with:
+ * - Available count and nearest spot distance
+ * - Tab filters (All / Free / Paid)
+ * - List of spots with reserve and navigate buttons
+ */
+
 import type { ParkingSpot } from "../types/parking";
 import { drivingMinutes, haversineMeters } from "../utils/distance";
 import { isAvailable, isPaid, isFree } from "../types/parking";

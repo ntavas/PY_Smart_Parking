@@ -1,3 +1,10 @@
+/**
+ * normalizeSpot.ts - API Response Normalizer
+ *
+ * Converts raw API/WebSocket parking spot data into a typed ParkingSpot object.
+ * Handles various field naming conventions (camelCase vs snake_case).
+ */
+
 import type { ParkingSpot } from "../types/parking";
 
 /** Accepts whatever the API/WS sends and returns a typed ParkingSpot */

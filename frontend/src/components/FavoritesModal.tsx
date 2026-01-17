@@ -1,4 +1,10 @@
-import React from 'react';
+/**
+ * FavoritesModal.tsx - User Favorites Modal
+ *
+ * Displays a list of user's favorite parking spots.
+ * Only shown when user is authenticated.
+ */
+
 import { useFavorites } from '../contexts/FavoritesContext';
 import type { ParkingSpot } from '../types/parking';
 import SpotList from './spots/SpotList';

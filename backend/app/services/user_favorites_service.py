@@ -1,3 +1,9 @@
+"""
+user_favorites_service.py - User Favorites Business Logic
+
+Manages user's favorite parking spots.
+"""
+
 from app.repositories.user_favorites_repository import UserFavoritesRepository
 
 class UserFavoritesService:

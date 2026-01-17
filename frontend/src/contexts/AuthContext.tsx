@@ -1,3 +1,10 @@
+/**
+ * AuthContext.tsx - Authentication Context
+ *
+ * Provides global auth state (user, login, logout) across the app.
+ * Persists user data to localStorage for session persistence.
+ */
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../types/user';

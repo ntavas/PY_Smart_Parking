@@ -1,3 +1,10 @@
+/**
+ * FavoritesContext.tsx - User Favorites Context
+ *
+ * Manages the user's favorite parking spots with optimistic updates.
+ * Syncs with backend API and provides add/remove/check functions.
+ */
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { api } from '../utils/api';

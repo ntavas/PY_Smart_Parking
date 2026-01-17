@@ -1,3 +1,10 @@
+/**
+ * useGeolocation.ts - Browser Geolocation Hook
+ *
+ * Tracks the user's real-time location using the browser's Geolocation API.
+ * Uses watchPosition for continuous updates with high accuracy settings.
+ */
+
 import { useEffect, useState } from 'react';
 
 type Coords = { lat: number; lng: number };

@@ -1,3 +1,10 @@
+"""
+user_service.py - User Business Logic
+
+Handles user authentication, registration, and profile management.
+Passwords are hashed using bcrypt before storage.
+"""
+
 import bcrypt
 from app.repositories.user_repository import UserRepository
 

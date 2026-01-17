@@ -1,3 +1,12 @@
+"""
+user_router.py - User API Endpoints
+
+Provides REST endpoints for:
+- User registration and login
+- User CRUD operations
+- Managing user's favorite parking spots
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db

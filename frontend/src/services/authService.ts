@@ -1,3 +1,10 @@
+/**
+ * authService.ts - Authentication API Service
+ *
+ * Handles API calls for user authentication:
+ * - Login, Register, Change Password
+ */
+
 import type { User, LoginFormData, RegisterFormData } from '../types/user';
 
 const API_BASE_URL = 'http://localhost:8000'; // Update with your backend URL

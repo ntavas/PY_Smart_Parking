@@ -1,3 +1,9 @@
+"""
+spot_status_log_repository.py - Status Log Data Access Layer
+
+Handles database operations for parking spot status history.
+"""
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from app.models import SpotStatusLog

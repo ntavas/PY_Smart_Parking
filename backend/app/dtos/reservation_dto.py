@@ -1,3 +1,9 @@
+"""
+reservation_dto.py - Reservation Data Transfer Objects
+
+Pydantic schemas for reservation-related API requests and responses.
+"""
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime

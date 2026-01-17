@@ -1,3 +1,10 @@
+/**
+ * useTheme.ts - Dark/Light Theme Hook
+ *
+ * Manages theme state and persists preference to localStorage.
+ * Applies 'dark' class to document root for Tailwind dark mode.
+ */
+
 import { useEffect, useState } from 'react';
 
 export function useTheme() {

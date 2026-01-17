@@ -1,3 +1,10 @@
+"""
+user_repository.py - User Data Access Layer
+
+Handles database operations for users and their favorites.
+User favorites are cached in Redis for fast lookups.
+"""
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import User, UserFavorites

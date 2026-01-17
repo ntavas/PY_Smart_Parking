@@ -1,3 +1,10 @@
+/**
+ * useViewportSpots.ts - Viewport Parking Spots Hook
+ *
+ * Fetches parking spots within the current map viewport bounds.
+ * Re-fetches when the map moves or zoom changes.
+ */
+
 import { useEffect, useMemo, useState } from "react";
 import type { ParkingSpot } from "../types/parking";
 import { normalizeSpot } from "../utils/normalizeSpot.ts";

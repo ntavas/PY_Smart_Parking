@@ -1,3 +1,9 @@
+"""
+user_favorites_dto.py - User Favorites Data Transfer Objects
+
+Pydantic schemas for user favorites API requests and responses.
+"""
+
 from pydantic import BaseModel
 
 class UserFavoritesBase(BaseModel):

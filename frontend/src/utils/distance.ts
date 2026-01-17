@@ -1,3 +1,10 @@
+/**
+ * distance.ts - Distance Calculation Utilities
+ *
+ * Provides Haversine formula for calculating distances between coordinates.
+ * Also estimates driving time based on average city speed.
+ */
+
 type LatLng = { lat: number; lng: number };
 
 const R = 6371e3; // meters

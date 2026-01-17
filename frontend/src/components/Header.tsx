@@ -1,3 +1,10 @@
+/**
+ * Header.tsx - Application Header
+ *
+ * Contains the app logo, search button, theme toggle, and auth controls.
+ * Manages the login/register modal flow.
+ */
+
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Modal } from './ui/Modal';

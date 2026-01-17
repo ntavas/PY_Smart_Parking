@@ -1,3 +1,10 @@
+"""
+user_favorites_router.py - User Favorites API Endpoints
+
+Provides REST endpoints for:
+- Managing user's favorite parking spots (add/remove/list)
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db

@@ -1,6 +1,18 @@
+/**
+ * App.tsx - Main Application Component
+ *
+ * This is the root component that orchestrates the Smart Parking frontend.
+ * It manages:
+ * - Theme (dark/light mode)
+ * - User geolocation
+ * - Parking spot data (from API + real-time WebSocket updates)
+ * - Modal states (search, favorites)
+ * - Map viewport bounds
+ */
+
 import { useMemo, useState } from "react";
 import Header from "./components/Header";
-import Sidebar from "./components/Siderbar";
+import Sidebar from "./components/Sidebar";
 import MapView, { type Bounds } from "./components/MapView";
 import { useTheme } from "./hooks/useTheme";
 import { useGeolocation } from "./hooks/useGeolocation";

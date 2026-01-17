@@ -1,4 +1,15 @@
+# =============================================================================
+# Smart Parking - Docker Compose Configuration
+# =============================================================================
+# This file defines all services needed to run the Smart Parking application.
+# Run with: docker-compose up --build
+# =============================================================================
+
 services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # Stores all persistent data: users, parking spots, reservations, etc.
+  # ---------------------------------------------------------------------------
   db:
     image: postgres:16
     restart: on-failure
@@ -16,15 +27,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Redis Cache
+  # Used for caching parking spot data to reduce database load.
+  # In production, this would be replaced with AWS ElastiCache.
+  # ---------------------------------------------------------------------------
   redis:
-    # Redis for local dev (ElastiCache for presentation)
     image: redis:7-alpine
     container_name: redis-cache
     ports:
       - "6379:6379"
     restart: on-failure
     volumes:
-      - ./redis_data:/data # Persist data across restarts
+      - ./redis_data:/data
+
+  # ---------------------------------------------------------------------------
+  # Redis Insight (Optional)
+  # Web UI for monitoring Redis cache. Access at http://localhost:5540
+  # ---------------------------------------------------------------------------
   redisInsight:
     image: redis/redisinsight:latest
     container_name: redis-insight
@@ -35,6 +56,12 @@ services:
       - redis
     volumes:
       - ./redisinsight_data:/data
+
+  # ---------------------------------------------------------------------------
+  # Mosquitto MQTT Broker
+  # Handles real-time parking sensor messages. Sensors publish spot status
+  # updates here, and the backend subscribes to receive them.
+  # ---------------------------------------------------------------------------
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: mqtt-broker
@@ -47,6 +74,12 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
+
+  # ---------------------------------------------------------------------------
+  # Backend API (FastAPI)
+  # Python backend that provides REST API and WebSocket endpoints.
+  # Waits for database to be healthy before starting.
+  # ---------------------------------------------------------------------------
   backend:
     build:
       context: ./backend
@@ -69,8 +102,13 @@ services:
       - REDIS_PORT=6379
       - REDIS_DB=0
     volumes:
-      - ./backend:/app # Mount for development adjustments if needed
+      - ./backend:/app
     restart: on-failure
+
+  # ---------------------------------------------------------------------------
+  # Frontend (React + Vite)
+  # Web application served at http://localhost:5173
+  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
@@ -83,6 +121,6 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8000
     volumes:
-      - ./frontend:/app # Mount for development adjustments
-      - /app/node_modules # Prevent overwriting node_modules
+      - ./frontend:/app
+      - /app/node_modules
     restart: on-failure

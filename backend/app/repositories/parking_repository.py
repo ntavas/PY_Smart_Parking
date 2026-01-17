@@ -1,3 +1,13 @@
+"""
+parking_repository.py - Parking Data Access Layer
+
+Handles all database and Redis operations for parking spots.
+Implements a cache-aside pattern:
+- First check Redis for cached data
+- Fall back to PostgreSQL if cache miss
+- Update both DB and Redis on writes
+"""
+
 from __future__ import annotations
 
 import logging
@@ -286,15 +296,19 @@ class ParkingRepository:
     async def search_spots(
         self,
         city: str,
-        area: str,
+        area: Optional[str] = None,
         is_free: Optional[bool] = None
     ) -> Optional[Tuple[int, float, float]]:
         """ Finds the first available spot matching criteria and returns its id and coordinates. """
+        # Start with city and status filter
         query = select(ParkingSpot.id, ParkingSpot.latitude, ParkingSpot.longitude).where(
             ParkingSpot.city == city,
-            ParkingSpot.area == area,
             ParkingSpot.status == "Available"
         )
+
+        # Only filter by area if provided
+        if area:
+            query = query.where(ParkingSpot.area == area)
 
         if is_free is not None:
             if is_free:

@@ -1,3 +1,9 @@
+"""
+user_dto.py - User Data Transfer Objects
+
+Pydantic schemas for user-related API requests and responses.
+"""
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime

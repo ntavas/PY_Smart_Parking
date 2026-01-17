@@ -1,4 +1,10 @@
-// useLiveSpots.ts
+/**
+ * useLiveSpots.ts - Real-time Parking Updates Hook
+ *
+ * Connects to the backend WebSocket to receive live parking spot updates.
+ * Automatically reconnects with exponential backoff if connection drops.
+ */
+
 import { useEffect, useRef, useState } from "react";
 
 export type LiveSpot = { id: number; status: string };
@@ -70,7 +76,7 @@ export function useLiveSpots() {
         return () => {
             isMountedRef.current = false;
             if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
-            try { wsRef.current?.close(); } catch {}
+            try { wsRef.current?.close(); } catch { }
         };
     }, []);
 
@@ -78,7 +84,7 @@ export function useLiveSpots() {
         const connect = () => {
             if (!isMountedRef.current) return;
 
-            try { wsRef.current?.close(); } catch {}
+            try { wsRef.current?.close(); } catch { }
             const ws = new WebSocket(WS_ENDPOINT);
             wsRef.current = ws;
 
@@ -101,7 +107,7 @@ export function useLiveSpots() {
                 const next = new Map(byIdRef.current);
                 next.set(parsed.id, parsed);
                 byIdRef.current = next;
-                
+
                 // Always trigger a state update to ensure React re-renders
                 setSpots(Array.from(next.values()));
             };
@@ -129,7 +135,7 @@ export function useLiveSpots() {
 
         return () => {
             if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
-            try { wsRef.current?.close(); } catch {}
+            try { wsRef.current?.close(); } catch { }
             wsRef.current = null;
             setConnected(false);
         };

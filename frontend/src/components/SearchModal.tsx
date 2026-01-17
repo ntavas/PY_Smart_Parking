@@ -1,9 +1,17 @@
+/**
+ * SearchModal.tsx - Parking Search Modal
+ *
+ * Allows users to search for parking by city and area.
+ * Returns coordinates to the map for fly-to navigation.
+ */
+
 import { useState, useEffect, useMemo } from "react";
 
 export type SearchResult = {
     id: number;
     latitude: number;
     longitude: number;
+    zoom?: number; // Optional zoom level for map fly-to
 };
 
 export type Locations = {
@@ -37,16 +45,19 @@ export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase
     }, [isOpen, apiBase]);
 
     const handleSearch = async () => {
-        if (!selectedCity || !selectedArea) {
-            setError("Please select a city and an area.");
+        if (!selectedCity) {
+            setError("Please select a city.");
             return;
         }
         setError(null);
 
         const params = new URLSearchParams({
             city: selectedCity,
-            area: selectedArea,
         });
+        // Only add area if selected
+        if (selectedArea) {
+            params.append("area", selectedArea);
+        }
         if (isFree !== null) {
             params.append("is_free", String(isFree));
         }
@@ -57,14 +68,19 @@ export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase
                 const err = await res.json();
                 throw new Error(err.detail || "Search failed");
             }
-            const result: SearchResult = await res.json();
+            const apiResult = await res.json();
+            // Set zoom level: city-only = 13 (zoomed out), with area = 16 (zoomed in)
+            const result: SearchResult = {
+                ...apiResult,
+                zoom: selectedArea ? 16 : 13,
+            };
             onSearch(result);
             onClose();
         } catch (e: any) {
             setError(e.message || "An unexpected error occurred.");
         }
     };
-    
+
     const availableAreas = useMemo(() => {
         return locations.areas[selectedCity] || [];
     }, [selectedCity, locations]);
@@ -77,11 +93,11 @@ export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase
     if (!isOpen) return null;
 
     return (
-        <div 
+        <div
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000] flex items-center justify-center transition-opacity duration-300"
             onClick={onClose}
         >
-            <div 
+            <div
                 className={`rounded-xl shadow-2xl p-6 m-4 w-full max-w-md transform transition-all duration-300 ${isDark ? 'bg-gray-900 text-gray-200' : 'bg-white'}`}
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
             >
@@ -139,8 +155,8 @@ export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase
                 </div>
 
                 <div className="mt-8">
-                    <button 
-                        onClick={handleSearch} 
+                    <button
+                        onClick={handleSearch}
                         className="w-full px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-900 transition"
                     >
                         Search

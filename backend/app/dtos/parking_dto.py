@@ -1,3 +1,10 @@
+"""
+parking_dto.py - Parking Spot Data Transfer Objects
+
+Pydantic schemas for API request/response validation.
+These ensure data integrity between frontend and backend.
+"""
+
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 

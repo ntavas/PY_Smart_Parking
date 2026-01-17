@@ -1,3 +1,13 @@
+"""
+parking_router.py - Parking Spot API Endpoints
+
+Provides REST endpoints for:
+- Querying spots within a map viewport (with caching)
+- CRUD operations on parking spots
+- Searching for available spots by city/area
+- Getting distinct cities and areas for search dropdowns
+"""
+
 import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -102,7 +112,7 @@ async def get_locations(service: ParkingService = Depends(get_parking_service)):
 @router.get("/search", response_model=SearchResult)
 async def search_spots(
     city: str = Query(..., description="City to search in"),
-    area: str = Query(..., description="Area to search in"),
+    area: Optional[str] = Query(None, description="Area to search in (optional)"),
     is_free: Optional[bool] = Query(None, description="Filter for free spots"),
     service: ParkingService = Depends(get_parking_service),
 ):

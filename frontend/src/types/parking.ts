@@ -1,3 +1,10 @@
+/**
+ * parking.ts - Parking-related Type Definitions
+ *
+ * Defines TypeScript types for parking spots, status, and helper functions.
+ */
+
+// Possible parking spot statuses
 export const SpotStatus = {
     Available: "Available",
     Occupied: "Occupied",

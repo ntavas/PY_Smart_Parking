@@ -1,3 +1,11 @@
+"""
+spot_status_log_router.py - Status Log API Endpoints
+
+Provides REST endpoints for:
+- Tracking historical status changes for parking spots
+- Used for analytics and debugging sensor data
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db

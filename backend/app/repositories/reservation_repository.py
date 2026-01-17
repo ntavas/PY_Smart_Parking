@@ -1,3 +1,9 @@
+"""
+reservation_repository.py - Reservation Data Access Layer
+
+Handles database operations for parking reservations.
+"""
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import Reservation

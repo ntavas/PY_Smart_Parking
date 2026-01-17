@@ -1,3 +1,11 @@
+"""
+parking_service.py - Parking Business Logic
+
+Handles business logic for parking spots including viewport queries,
+CRUD operations, and search functionality. Acts as intermediary between
+routers and repositories.
+"""
+
 from app.repositories.parking_repository import ParkingRepository
 from app.models import ParkingSpot
 import logging
@@ -44,7 +52,7 @@ class ParkingService:
     async def get_distinct_locations(self):
         return await self.repo.get_distinct_locations()
 
-    async def search_spots(self, city: str, area: str, is_free: Optional[bool]):
+    async def search_spots(self, city: str, area: Optional[str], is_free: Optional[bool]):
         spot_data = await self.repo.search_spots(city, area, is_free)
         if not spot_data:
             raise ValueError("No available spots found for the selected criteria.")

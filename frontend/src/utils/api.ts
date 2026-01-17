@@ -1,3 +1,10 @@
+/**
+ * api.ts - Generic API Client
+ *
+ * Provides a simple wrapper around fetch for making API requests.
+ * Automatically handles JSON serialization and error handling.
+ */
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000/api';
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
