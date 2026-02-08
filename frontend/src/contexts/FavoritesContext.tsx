@@ -33,7 +33,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setLoading(true);
             const res = await api.get<number[]>(`/users/${user.id}/favorites`);
             setFavorites(res || []);
-        } catch (error) {
+        } catch (error: any) {
+            // Suppress 401 errors in console if they happen during logout/session expiry
+            if (error?.message?.includes('401')) {
+                setFavorites([]);
+                return;
+            }
             console.error("Failed to fetch favorites", error);
         } finally {
             setLoading(false);
@@ -41,8 +46,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }, [user, isAuthenticated]);
 
     useEffect(() => {
-        fetchFavorites();
-    }, [fetchFavorites]);
+        if (isAuthenticated && user) {
+            fetchFavorites();
+        } else {
+            setFavorites([]);
+        }
+    }, [fetchFavorites, isAuthenticated, user]);
 
     const addFavorite = async (spotId: number) => {
         if (!user) return;

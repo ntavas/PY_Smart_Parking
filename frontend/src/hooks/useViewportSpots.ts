@@ -35,7 +35,11 @@ export function useViewportSpots(
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            const headers = authService.getAuthHeaders();
+            const headers: Record<string, string> = {};
+            if (authService.isAuthenticated()) {
+                Object.assign(headers, authService.getAuthHeaders());
+            }
+
             const res = await fetch(`${apiBase}/parking/spots/in_viewport?${qs}`, {
                 headers
             });

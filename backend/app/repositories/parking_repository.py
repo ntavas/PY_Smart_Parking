@@ -69,11 +69,48 @@ class ParkingRepository:
     async def get_spot_by_id(self, spot_id: int) -> Optional[ParkingSpot]:
         return await self.db.get(ParkingSpot, spot_id)
 
-    async def create_spot(self, location: str, latitude: float, longitude: float, status: str) -> ParkingSpot:
-        spot = ParkingSpot(location=location, latitude=latitude, longitude=longitude, status=status)
+    async def create_spot(self, location: str, latitude: float, longitude: float, status: str, city: Optional[str] = None, area: Optional[str] = None, price_per_hour: Optional[float] = None) -> ParkingSpot:
+        spot = ParkingSpot(
+            location=location, latitude=latitude, longitude=longitude, status=status,
+            city=city, area=area
+        )
         self.db.add(spot)
+        await self.db.flush() # Generate ID
+
+        if price_per_hour is not None and price_per_hour > 0:
+            paid = PaidParking(spot_id=spot.id, price_per_hour=Decimal(str(price_per_hour)))
+            self.db.add(paid)
+        
         await self.db.commit()
         await self.db.refresh(spot)
+        
+        # Manually attach price for immediate return 
+        if price_per_hour is not None and price_per_hour > 0:
+             spot.price_per_hour = Decimal(str(price_per_hour))
+        else:
+             spot.price_per_hour = None
+             
+        # Also sync to Redis
+        try:
+            mapping = {
+                "id": str(spot.id),
+                "latitude": str(spot.latitude),
+                "longitude": str(spot.longitude),
+                "location": spot.location,
+                "status": spot.status,
+                "last_updated": spot.last_updated.isoformat() if spot.last_updated else "",
+            }
+            if price_per_hour is not None and price_per_hour > 0:
+                mapping["price_per_hour"] = str(price_per_hour)
+                await redis_client.sadd("spots:paid", spot.id)
+            
+            await redis_client.hset(f"spot:{spot.id}", mapping=mapping)
+            await redis_client.sadd(f"spots:by_status:{spot.status}", spot.id)
+            await redis_client.execute_command("GEOADD", f"spots:geo:{spot.status}", float(spot.longitude), float(spot.latitude), f"spot_{spot.id}")
+            
+        except Exception as e:
+            logger.error(f"Redis update failed after create: {e}")
+
         return spot
 
     async def update_spot(self, spot_id: int, **updates) -> Optional[ParkingSpot]:

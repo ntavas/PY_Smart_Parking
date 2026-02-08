@@ -102,4 +102,8 @@ export const authService = {
 
     return response.json();
   },
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem(USER_STORAGE_KEY);
+  },
 };

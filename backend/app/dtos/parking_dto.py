@@ -13,12 +13,18 @@ class ParkingSpotCreate(BaseModel):
     latitude: float
     longitude: float
     status: Optional[str] = "Available"
+    city: Optional[str] = None
+    area: Optional[str] = None
+    price_per_hour: Optional[float] = None
 
 class ParkingSpotUpdate(BaseModel):
     location: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     status: Optional[str] = None
+    city: Optional[str] = None
+    area: Optional[str] = None
+    price_per_hour: Optional[float] = None
 
 from datetime import datetime
 

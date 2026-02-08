@@ -24,7 +24,7 @@ from app.dtos.parking_dto import (
     LocationsResponse,
     SearchResult,
 )
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, get_current_admin_user, get_optional_current_user
 from app.models import User
 
 #add logger
@@ -45,7 +45,8 @@ async def get_spots_viewport(
     status: Optional[str] = Query(None, description="Optional status filter"),
     limit: int = Query(100, gt=0, le=500),
     service: ParkingService = Depends(get_parking_service),
-    current_user: User = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
+
     ):
 
     logger.info(f"Getting spots in viewport: {sw_lat}, {sw_lng}, {ne_lat}, {ne_lng}, {zoom}, {status}, {limit}")
@@ -90,16 +91,21 @@ async def get_spot(
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
+from app.core.deps import get_current_user, get_current_admin_user
+
+# ... (retain existing imports)
+
 @router.post("/spots", response_model=ParkingSpotResponse)
 async def create_spot(
     spot: ParkingSpotCreate, 
     service: ParkingService = Depends(get_parking_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_admin_user)
 ):
-    s = await service.create_spot(spot.location, spot.latitude, spot.longitude, spot.status)
+    s = await service.create_spot(spot.dict())
     return ParkingSpotResponse(
-    id=s.id, latitude=s.latitude, longitude=s.longitude, location=s.location,
-    status=s.status, last_updated=s.last_updated.isoformat() if s.last_updated else None
+        id=s.id, latitude=s.latitude, longitude=s.longitude, location=s.location,
+        status=s.status, last_updated=s.last_updated, price_per_hour=s.price_per_hour,
+        city=s.city, area=s.area
     )
 
 @router.put("/spots/{spot_id}", response_model=ParkingSpotResponse)
@@ -107,14 +113,26 @@ async def update_spot(
     spot_id: int, 
     updates: ParkingSpotUpdate, 
     service: ParkingService = Depends(get_parking_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_admin_user)
 ):
     try:
         s = await service.update_spot(spot_id, **updates.dict(exclude_unset=True))
         return ParkingSpotResponse(
-          id=s.id, latitude=s.latitude, longitude=s.longitude, location=s.location,
-          status=s.status, last_updated=s.last_updated.isoformat() if s.last_updated else None
+            id=s.id, latitude=s.latitude, longitude=s.longitude, location=s.location,
+            status=s.status, last_updated=s.last_updated, price_per_hour=s.price_per_hour,
+            city=s.city, area=s.area
         )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.delete("/spots/{spot_id}", status_code=204)
+async def delete_spot(
+    spot_id: int, 
+    service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_admin_user)
+):
+    try:
+        await service.delete_spot(spot_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

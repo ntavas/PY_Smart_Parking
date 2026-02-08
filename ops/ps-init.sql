@@ -26,13 +26,18 @@ CREATE TABLE spot_status_log (
 );
 
 -- Users
-CREATE TABLE users (
+CREATE Table users (
                        id SERIAL PRIMARY KEY,
                        email VARCHAR(100) UNIQUE NOT NULL,
                        password_hash TEXT NOT NULL,
                        full_name VARCHAR(100),
+                       is_admin BOOLEAN DEFAULT FALSE,
                        created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC')
 );
+
+-- Default Admin User (password: 'Admin123')
+INSERT INTO users (email, password_hash, full_name, is_admin)
+VALUES ('admin@smartparking.gr', '$2b$12$Ilve63iK7KtdrQPxUCmtIezXNoZMMalCMhNETygMQQKsoKBL9ckedO', 'System Administrator', TRUE);
 
 -- Favorites
 CREATE TABLE user_favorites (

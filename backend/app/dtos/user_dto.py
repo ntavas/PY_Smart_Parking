@@ -30,6 +30,7 @@ class UserResponse(BaseModel):
     id: int
     email: str
     full_name: str
+    is_admin: bool
     created_at: datetime
 
     class Config:

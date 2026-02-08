@@ -10,7 +10,7 @@ Defines all database tables and their relationships:
 - PaidParking: Pricing info for paid parking spots
 """
 
-from sqlalchemy import Column, Integer, Float, String, Text, DateTime, ForeignKey, func, Numeric
+from sqlalchemy import Column, Integer, Float, String, Text, DateTime, ForeignKey, func, Numeric, Boolean
 from sqlalchemy.orm import DeclarativeBase, relationship
 
 
@@ -74,6 +74,7 @@ class User(Base):
     email = Column(String(100), unique=True, nullable=False)
     password_hash = Column(Text, nullable=False)  # Hashed password, never plain text
     full_name = Column(String(100), nullable=True)
+    is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=False), server_default=func.now())
 
     favorites = relationship("UserFavorites", back_populates="user")

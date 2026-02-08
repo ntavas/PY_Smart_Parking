@@ -11,6 +11,7 @@ Smart Parking is a full-stack web application that provides:
 - **User authentication** with login and registration (JWT-based)
 - **Favorites** system to save preferred parking spots
 - **Reservation** system to temporarily hold a spot
+- **Admin Dashboard** for managing parking spots and pricing
 - **Frontend Gatekeeper** to protect map access
 
 ## 🏗️ Architecture
@@ -150,6 +151,9 @@ npm run dev
 | POST | `/api/users/login` | User login (returns JWT) |
 | POST | `/api/users/` | User registration |
 | POST | `/api/reservations/` | Create a reservation |
+| POST | `/api/parking/spots` | Create new spot (Admin) |
+| PUT | `/api/parking/spots/{id}` | Update spot settings (Admin) |
+| DELETE | `/api/parking/spots/{id}` | Delete a spot (Admin) |
 | WebSocket | `/ws` | Real-time spot updates |
 
 ## 🔄 Real-time Updates
@@ -194,6 +198,13 @@ MQTT Topic format: `parking/<city>/<spot_id>/status`
 - **Landing Page**: Dedicated entry point for unauthenticated users.
 - **Save favorite spots**: Keep track of best parking locations.
 - **Reserve spots**: 30-second hold for testing (authenticated only).
+
+### Admin Dashboard (`/admin`)
+- **Protected Route**: Only accessible to users with `is_admin=True`.
+- **Manage Spots**: Create, update, and delete parking spots.
+- **Search & Filter**: Real-time filtering of spots by location, city, or area.
+- **Paid Parking**: Toggle spots as "Paid" and set hourly rates.
+- **Status Management**: Monitor and manually update spot status.
 
 ## 📝 Environment Variables
 

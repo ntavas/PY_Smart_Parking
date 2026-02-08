@@ -26,8 +26,8 @@ class ParkingService:
             raise ValueError("Spot not found")
         return spot
 
-    async def create_spot(self, location: str, latitude: float, longitude: float, status: str):
-        return await self.repo.create_spot(location, latitude, longitude, status)
+    async def create_spot(self, spot_data: dict):
+        return await self.repo.create_spot(**spot_data)
 
     async def update_spot(self, spot_id: int, **updates):
         spot = await self.repo.update_spot(spot_id, **updates)

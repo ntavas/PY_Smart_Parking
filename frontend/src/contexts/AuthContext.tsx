@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (user: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +23,7 @@ const USER_STORAGE_KEY = 'smart_parking_user';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -34,6 +36,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem(USER_STORAGE_KEY);
       }
     }
+    setLoading(false);
   }, []);
 
   const login = (user: User) => {
@@ -49,7 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isAuthenticated = user !== null;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, loading }}>
       {children}
     </AuthContext.Provider>
   );

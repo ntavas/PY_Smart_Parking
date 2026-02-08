@@ -34,7 +34,15 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 
 export const api = {
     get: <T>(endpoint: string) => request<T>(endpoint, { method: 'GET' }),
-    post: <T>(endpoint: string, body?: any) => request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) }),
-    put: <T>(endpoint: string, body?: any) => request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
+    post: <T>(endpoint: string, body?: any) => request<T>(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' }
+    }),
+    put: <T>(endpoint: string, body?: any) => request<T>(endpoint, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' }
+    }),
     delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
 };
