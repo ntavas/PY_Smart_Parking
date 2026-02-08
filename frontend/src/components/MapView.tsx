@@ -12,10 +12,10 @@
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L, { type LatLngExpression } from "leaflet";
-import type { ParkingSpot } from "../types/parking";
+import type { ParkingSpot, Tab } from "../types/parking";
 import { isAvailable } from "../types/parking";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { Tab } from "../App";
+
 import { type SearchResult } from "./SearchModal";
 import { useFavorites } from "../contexts/FavoritesContext";
 import { useReservation } from "../hooks/useReservation";

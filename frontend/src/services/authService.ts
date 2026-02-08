@@ -8,8 +8,24 @@
 import type { User, LoginFormData, RegisterFormData } from '../types/user';
 
 const API_BASE_URL = 'http://localhost:8000'; // Update with your backend URL
+const USER_STORAGE_KEY = 'smart_parking_user';
 
 export const authService = {
+  getAuthHeaders(): HeadersInit {
+    const stored = localStorage.getItem(USER_STORAGE_KEY);
+    let token = '';
+    if (stored) {
+      try {
+        const user = JSON.parse(stored);
+        token = user.token || '';
+      } catch (e) { console.error('Error parsing user for token', e); }
+    }
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    };
+  },
+
   /**
    * Login user with email and password
    */
@@ -27,7 +43,11 @@ export const authService = {
       throw new Error(error.detail || 'Login failed');
     }
 
-    return response.json();
+    const resData = await response.json();
+    // Backend returns { access_token, token_type, user }
+    // We merge token into user object
+    const userWithToken: User = { ...resData.user, token: resData.access_token };
+    return userWithToken;
   },
 
   /**
@@ -47,10 +67,15 @@ export const authService = {
     });
 
     if (!response.ok) {
+      // ... error handling
       const error = await response.json();
       throw new Error(error.detail || 'Registration failed');
     }
 
+    // Registration returns just the user (no token yet usually, unless I changed it)
+    // My backend `create_user` returns `UserResponse` (no token).
+    // So user still needs to login, or I could auto-login.
+    // For now, return user.
     return response.json();
   },
 
@@ -64,9 +89,7 @@ export const authService = {
   ): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: this.getAuthHeaders(),
       body: JSON.stringify({
         password: newPassword,
       }),

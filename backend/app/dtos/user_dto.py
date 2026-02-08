@@ -34,3 +34,9 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Login Response DTO
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse

@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import type { Reservation } from '../types/reservation';
 import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/authService';
 
 interface Props {
     isOpen: boolean;
@@ -25,7 +26,9 @@ export default function ReservationsModal({ isOpen, onClose, apiBase }: Props) {
         if (isOpen && user) {
             setLoading(true);
             setError(null);
-            fetch(`${apiBase}/reservations/user/${user.id}`)
+            fetch(`${apiBase}/reservations/user/${user.id}`, {
+                headers: authService.getAuthHeaders()
+            })
                 .then(res => {
                     if (!res.ok) throw new Error('Failed to fetch reservations');
                     return res.json();

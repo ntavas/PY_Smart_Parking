@@ -24,6 +24,8 @@ from app.dtos.parking_dto import (
     LocationsResponse,
     SearchResult,
 )
+from app.core.deps import get_current_user
+from app.models import User
 
 #add logger
 logger = logging.getLogger(__name__)
@@ -43,6 +45,7 @@ async def get_spots_viewport(
     status: Optional[str] = Query(None, description="Optional status filter"),
     limit: int = Query(100, gt=0, le=500),
     service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_user)
     ):
 
     logger.info(f"Getting spots in viewport: {sw_lat}, {sw_lng}, {ne_lat}, {ne_lng}, {zoom}, {status}, {limit}")
@@ -62,7 +65,10 @@ async def get_spots_viewport(
     return ViewportResponse(spots=dtos, total=len(dtos))
 
 @router.get("/spots", response_model=list[ParkingSpotResponse])
-async def get_all_spots(service: ParkingService = Depends(get_parking_service)):
+async def get_all_spots(
+    service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_user)
+):
     spots = await service.get_all_spots()
     return [ParkingSpotResponse(
     id=s.id, latitude=s.latitude, longitude=s.longitude, location=s.location,
@@ -70,7 +76,11 @@ async def get_all_spots(service: ParkingService = Depends(get_parking_service)):
     ) for s in spots]
 
 @router.get("/spots/{spot_id}", response_model=ParkingSpotResponse)
-async def get_spot(spot_id: int, service: ParkingService = Depends(get_parking_service)):
+async def get_spot(
+    spot_id: int, 
+    service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_user)
+):
     try:
         s = await service.get_spot_by_id(spot_id)
         return ParkingSpotResponse(
@@ -81,7 +91,11 @@ async def get_spot(spot_id: int, service: ParkingService = Depends(get_parking_s
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.post("/spots", response_model=ParkingSpotResponse)
-async def create_spot(spot: ParkingSpotCreate, service: ParkingService = Depends(get_parking_service)):
+async def create_spot(
+    spot: ParkingSpotCreate, 
+    service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_user)
+):
     s = await service.create_spot(spot.location, spot.latitude, spot.longitude, spot.status)
     return ParkingSpotResponse(
     id=s.id, latitude=s.latitude, longitude=s.longitude, location=s.location,
@@ -89,7 +103,12 @@ async def create_spot(spot: ParkingSpotCreate, service: ParkingService = Depends
     )
 
 @router.put("/spots/{spot_id}", response_model=ParkingSpotResponse)
-async def update_spot(spot_id: int, updates: ParkingSpotUpdate, service: ParkingService = Depends(get_parking_service)):
+async def update_spot(
+    spot_id: int, 
+    updates: ParkingSpotUpdate, 
+    service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_user)
+):
     try:
         s = await service.update_spot(spot_id, **updates.dict(exclude_unset=True))
         return ParkingSpotResponse(
@@ -100,7 +119,10 @@ async def update_spot(spot_id: int, updates: ParkingSpotUpdate, service: Parking
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.get("/locations", response_model=LocationsResponse)
-async def get_locations(service: ParkingService = Depends(get_parking_service)):
+async def get_locations(
+    service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_user)
+):
     """ Returns a structured list of distinct cities and their corresponding areas. """
     try:
         cities, areas = await service.get_distinct_locations()
@@ -115,6 +137,7 @@ async def search_spots(
     area: Optional[str] = Query(None, description="Area to search in (optional)"),
     is_free: Optional[bool] = Query(None, description="Filter for free spots"),
     service: ParkingService = Depends(get_parking_service),
+    current_user: User = Depends(get_current_user)
 ):
     """ Searches for an available spot and returns its coordinates for map navigation. """
     try:

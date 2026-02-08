@@ -5,13 +5,18 @@
  * Automatically handles JSON serialization and error handling.
  */
 
+import { authService } from '../services/authService';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000/api';
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
+
+    // Merge auth headers with any custom headers
+    const authHeaders = authService.getAuthHeaders();
     const headers = {
-        'Content-Type': 'application/json',
-        ...options?.headers,
+        ...authHeaders, // 'Content-Type': 'application/json', 'Authorization': ...
+        ...options?.headers as Record<string, string>,
     };
 
     const response = await fetch(url, {

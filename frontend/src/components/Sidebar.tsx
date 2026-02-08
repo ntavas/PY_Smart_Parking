@@ -7,12 +7,11 @@
  * - List of spots with reserve and navigate buttons
  */
 
-import type { ParkingSpot } from "../types/parking";
+import type { ParkingSpot, Tab } from "../types/parking";
 import { drivingMinutes, haversineMeters } from "../utils/distance";
 import { isAvailable, isPaid, isFree } from "../types/parking";
 import SpotList from "./spots/SpotList.tsx";
 import { useMemo } from "react";
-import type { Tab } from "../App";
 import { useAuth } from "../contexts/AuthContext";
 
 type Props = {

@@ -5,8 +5,8 @@ Handles user authentication, registration, and profile management.
 Passwords are hashed using bcrypt before storage.
 """
 
-import bcrypt
 from app.repositories.user_repository import UserRepository
+from app.core.security import get_password_hash, verify_password
 
 class UserService:
     def __init__(self, user_repo: UserRepository):
@@ -19,7 +19,7 @@ class UserService:
             raise ValueError("Invalid email or password")
         
         # Verify password
-        if not bcrypt.checkpw(password.encode(), user.password_hash.encode()):
+        if not verify_password(password, user.password_hash):
             raise ValueError("Invalid email or password")
         
         return user
@@ -40,7 +40,7 @@ class UserService:
             raise ValueError("Email already in use")
 
         # Hash password
-        password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        password_hash = get_password_hash(password)
 
         # Create user
         user = await self.user_repo.create_user(email, password_hash, full_name)
@@ -49,7 +49,7 @@ class UserService:
     async def update_user(self, user_id: int, **updates):
         # Hash password if provided
         if 'password' in updates and updates['password']:
-            updates['password_hash'] = bcrypt.hashpw(updates['password'].encode(), bcrypt.gensalt()).decode()
+            updates['password_hash'] = get_password_hash(updates['password'])
             del updates['password']
 
         # Check if email is being updated and if it already exists
