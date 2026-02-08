@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
+import { api } from "../utils/api";
 
 export type SearchResult = {
     id: number;
@@ -24,10 +25,10 @@ type Props = {
     onClose: () => void;
     onSearch: (result: SearchResult) => void;
     isDark?: boolean;
-    apiBase: string;
+    apiBase: string; // Kept for compatibility but unused for fetch
 };
 
-export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase }: Props) {
+export default function SearchModal({ isOpen, onClose, onSearch, isDark }: Props) {
     const [locations, setLocations] = useState<Locations>({ cities: [], areas: {} });
     const [selectedCity, setSelectedCity] = useState<string>("");
     const [selectedArea, setSelectedArea] = useState<string>("");
@@ -37,12 +38,11 @@ export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase
     // Fetch locations on mount
     useEffect(() => {
         if (isOpen) {
-            fetch(`${apiBase}/parking/locations`)
-                .then((res) => res.json())
+            api.get<Locations>('/parking/locations')
                 .then(setLocations)
                 .catch(() => setError("Failed to load locations."));
         }
-    }, [isOpen, apiBase]);
+    }, [isOpen]);
 
     const handleSearch = async () => {
         if (!selectedCity) {
@@ -63,12 +63,8 @@ export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase
         }
 
         try {
-            const res = await fetch(`${apiBase}/parking/search?${params.toString()}`);
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || "Search failed");
-            }
-            const apiResult = await res.json();
+            const apiResult = await api.get<SearchResult>(`/parking/search?${params.toString()}`);
+
             // Set zoom level: city-only = 13 (zoomed out), with area = 16 (zoomed in)
             const result: SearchResult = {
                 ...apiResult,
@@ -82,6 +78,7 @@ export default function SearchModal({ isOpen, onClose, onSearch, isDark, apiBase
     };
 
     const availableAreas = useMemo(() => {
+        if (!locations?.areas) return [];
         return locations.areas[selectedCity] || [];
     }, [selectedCity, locations]);
 

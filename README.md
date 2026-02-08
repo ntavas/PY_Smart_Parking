@@ -8,9 +8,10 @@ Smart Parking is a full-stack web application that provides:
 - **Real-time parking spot availability** via WebSocket updates
 - **Interactive map** showing parking spots with color-coded status
 - **Search functionality** to find parking by city and area
-- **User authentication** with login and registration
+- **User authentication** with login and registration (JWT-based)
 - **Favorites** system to save preferred parking spots
 - **Reservation** system to temporarily hold a spot
+- **Frontend Gatekeeper** to protect map access
 
 ## 🏗️ Architecture
 
@@ -41,6 +42,7 @@ Smart Parking is a full-stack web application that provides:
 
 **Backend:**
 - FastAPI (Python) for REST API
+- JSON Web Tokens (JWT) for secure authentication
 - SQLAlchemy for database ORM
 - Paho-MQTT for real-time sensor data
 - Redis for caching (cache-aside pattern)
@@ -77,8 +79,8 @@ Smart_Parking_PY/
     ├── Dockerfile          # Frontend container config
     ├── package.json        # Node dependencies
     └── src/
-        ├── App.tsx         # Main application component
-        ├── main.tsx        # React entry point
+        ├── App.tsx         # Auth Gatekeeper (MainLayout vs LandingPage)
+        ├── main.tsx        # React entry point & 404 Routing
         ├── components/     # UI components
         ├── hooks/          # Custom React hooks
         ├── contexts/       # React contexts (Auth, Favorites)
@@ -145,7 +147,7 @@ npm run dev
 | GET | `/api/parking/spots/in_viewport` | Get spots within map bounds |
 | GET | `/api/parking/search` | Search for available spots |
 | GET | `/api/parking/locations` | Get cities and areas |
-| POST | `/api/users/login` | User login |
+| POST | `/api/users/login` | User login (returns JWT) |
 | POST | `/api/users/` | User registration |
 | POST | `/api/reservations/` | Create a reservation |
 | WebSocket | `/ws` | Real-time spot updates |
@@ -188,9 +190,10 @@ MQTT Topic format: `parking/<city>/<spot_id>/status`
 - Map flies to search result
 
 ### User Features
-- Register and login
-- Save favorite spots
-- Reserve spots (30-second hold for testing)
+- **Secure Login/Registration**: JWT-based auth with auto-redirects.
+- **Landing Page**: Dedicated entry point for unauthenticated users.
+- **Save favorite spots**: Keep track of best parking locations.
+- **Reserve spots**: 30-second hold for testing (authenticated only).
 
 ## 📝 Environment Variables
 
