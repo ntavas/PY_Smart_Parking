@@ -22,8 +22,11 @@ class ReservationUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
+from app.dtos.parking_dto import ParkingSpotResponse
+
 class ReservationResponse(ReservationBase):
     id: int
+    spot: ParkingSpotResponse
 
     class Config:
         from_attributes = True

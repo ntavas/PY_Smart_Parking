@@ -21,6 +21,8 @@ export type ParkingSpot = {
     latitude: number;
     longitude: number;
     location: string;
+    city?: string;
+    area?: string;
     status: ParkingStatus;
     last_updated?: string;
     pricePerHour?: number | null;

@@ -9,27 +9,39 @@ from sqlalchemy import select
 from app.models import Reservation
 from typing import List, Optional
 from datetime import datetime
+from sqlalchemy.orm import joinedload
 
 class ReservationRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_all_reservations(self) -> List[Reservation]:
-        result = await self.db.execute(select(Reservation))
+        result = await self.db.execute(
+            select(Reservation).options(joinedload(Reservation.spot))
+        )
         return result.scalars().all()
 
     async def get_reservation_by_id(self, reservation_id: int) -> Optional[Reservation]:
-        return await self.db.get(Reservation, reservation_id)
+        result = await self.db.execute(
+            select(Reservation)
+            .where(Reservation.id == reservation_id)
+            .options(joinedload(Reservation.spot))
+        )
+        return result.scalar_one_or_none()
 
     async def get_reservations_by_user_id(self, user_id: int) -> List[Reservation]:
         result = await self.db.execute(
-            select(Reservation).where(Reservation.user_id == user_id)
+            select(Reservation)
+            .where(Reservation.user_id == user_id)
+            .options(joinedload(Reservation.spot))
         )
         return result.scalars().all()
 
     async def get_reservations_by_spot_id(self, spot_id: int) -> List[Reservation]:
         result = await self.db.execute(
-            select(Reservation).where(Reservation.spot_id == spot_id)
+            select(Reservation)
+            .where(Reservation.spot_id == spot_id)
+            .options(joinedload(Reservation.spot))
         )
         return result.scalars().all()
 
@@ -43,7 +55,7 @@ class ReservationRepository:
         self.db.add(reservation)
         await self.db.commit()
         await self.db.refresh(reservation)
-        return reservation
+        return await self.get_reservation_by_id(reservation.id)
 
     async def update_reservation(self, reservation_id: int, **updates) -> Optional[Reservation]:
         reservation = await self.db.get(Reservation, reservation_id)
@@ -53,10 +65,10 @@ class ReservationRepository:
             if value is not None:
                 setattr(reservation, key, value)
         await self.db.commit()
-        return reservation
+        return await self.get_reservation_by_id(reservation_id)
 
     async def delete_reservation(self, reservation_id: int) -> Optional[Reservation]:
-        reservation = await self.db.get(Reservation, reservation_id)
+        reservation = await self.get_reservation_by_id(reservation_id)
         if reservation:
             await self.db.delete(reservation)
             await self.db.commit()

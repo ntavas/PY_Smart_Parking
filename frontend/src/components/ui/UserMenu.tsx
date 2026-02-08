@@ -5,9 +5,10 @@ import { ChangePasswordForm } from '../auth/ChangePasswordForm';
 
 interface Props {
   onFavoritesClick?: () => void;
+  onReservationsClick?: () => void;
 }
 
-export const UserMenu: React.FC<Props> = ({ onFavoritesClick }) => {
+export const UserMenu: React.FC<Props> = ({ onFavoritesClick, onReservationsClick }) => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
@@ -50,8 +51,9 @@ export const UserMenu: React.FC<Props> = ({ onFavoritesClick }) => {
   };
 
   const handleReservations = () => {
-    // TODO: implement reservations functionality
-    console.log('Navigate to reservations');
+    if (onReservationsClick) {
+      onReservationsClick();
+    }
     setIsMenuOpen(false);
   };
 

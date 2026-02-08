@@ -55,7 +55,7 @@ class ParkingRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    # --- NEW: fetch all paid prices into a dict[spot_id] = Decimal(price) ---
+    # --- fetch all paid prices into a dict[spot_id] = Decimal(price) ---
     async def _get_paid_prices_map(self) -> Dict[int, Decimal]:
         res = await self.db.execute(select(PaidParking.spot_id, PaidParking.price_per_hour))
         rows = res.all()

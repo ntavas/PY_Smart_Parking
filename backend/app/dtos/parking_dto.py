@@ -20,13 +20,15 @@ class ParkingSpotUpdate(BaseModel):
     longitude: Optional[float] = None
     status: Optional[str] = None
 
+from datetime import datetime
+
 class ParkingSpotResponse(BaseModel):
     id: int
     latitude: float
     longitude: float
     location: str
     status: str
-    last_updated: str | None
+    last_updated: datetime | None
     price_per_hour: Optional[float] = None
     city: Optional[str] = None
     area: Optional[str] = None

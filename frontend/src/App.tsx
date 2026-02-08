@@ -24,6 +24,8 @@ import SearchModal, { type SearchResult } from "./components/SearchModal";
 import { FavoritesProvider } from "./contexts/FavoritesContext";
 import FavoritesModal from "./components/FavoritesModal";
 
+import ReservationsModal from "./components/ReservationsModal";
+
 export type Tab = "all" | "free" | "paid";
 
 export default function App() {
@@ -32,6 +34,7 @@ export default function App() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
     const [isFavoritesModalOpen, setIsFavoritesModalOpen] = useState(false);
+    const [isReservationsModalOpen, setIsReservationsModalOpen] = useState(false);
     const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
     const [tab, setTab] = useState<Tab>("all"); // <-- lifted tab
 
@@ -81,6 +84,7 @@ export default function App() {
                     toggleTheme={toggleTheme}
                     onSearchClick={() => setIsSearchModalOpen(true)}
                     onFavoritesClick={() => setIsFavoritesModalOpen(true)}
+                    onReservationsClick={() => setIsReservationsModalOpen(true)}
                 />
 
                 <div className="flex flex-1 overflow-hidden relative">
@@ -136,6 +140,12 @@ export default function App() {
                         onClose={() => setIsFavoritesModalOpen(false)}
                         spots={merged}
                         userCoords={coords || undefined}
+                    />
+
+                    <ReservationsModal
+                        isOpen={isReservationsModalOpen}
+                        onClose={() => setIsReservationsModalOpen(false)}
+                        apiBase={API_BASE}
                     />
                 </div>
             </div>

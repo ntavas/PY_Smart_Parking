@@ -24,7 +24,7 @@ export default function SpotList({ spots, userCoords, showReserve, computeWalkMi
 
     const handleNavigate = (spot: ParkingSpot) => {
         const destination = `${spot.latitude},${spot.longitude}`;
-        const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=walking`;
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
         window.open(url, '_blank');
     };
 
@@ -51,6 +51,8 @@ export default function SpotList({ spots, userCoords, showReserve, computeWalkMi
                                 key={s.id}
                                 id={s.id}
                                 name={s.location}
+                                city={s.city}
+                                area={s.area}
                                 address={s.location}
                                 pricePerHour={s.pricePerHour ?? null}
                                 minutesWalk={mins}

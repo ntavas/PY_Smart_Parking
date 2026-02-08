@@ -17,11 +17,12 @@ type Props = {
     toggleTheme: () => void;
     onSearchClick: () => void;
     onFavoritesClick: () => void;
+    onReservationsClick: () => void;
 };
 
 type AuthModalView = 'login' | 'register';
 
-export default function Header({ isDark, toggleTheme, onSearchClick, onFavoritesClick }: Props) {
+export default function Header({ isDark, toggleTheme, onSearchClick, onFavoritesClick, onReservationsClick }: Props) {
     const { isAuthenticated } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authModalView, setAuthModalView] = useState<AuthModalView>('login');
@@ -51,9 +52,14 @@ export default function Header({ isDark, toggleTheme, onSearchClick, onFavorites
                 <div className="flex items-center justify-between px-4 py-3 md:px-6">
                     {/* Logo/Brand */}
                     <div className="flex items-center gap-2">
-                        <div className="text-xl font-bold text-slate-800 dark:text-white">
-                            🅿️ SmartPark
-                        </div>
+                        <img
+                            src="/smart-parking-logo.png"
+                            alt="SmartPark Logo"
+                            className="h-10 w-auto object-contain"
+                        />
+                        <span className="text-xl font-bold text-slate-800 dark:text-white">
+                            SmartParking
+                        </span>
                     </div>
 
                     {/* Actions */}
@@ -81,7 +87,7 @@ export default function Header({ isDark, toggleTheme, onSearchClick, onFavorites
 
                         {/* Auth Button / User Menu */}
                         {isAuthenticated ? (
-                            <UserMenu onFavoritesClick={onFavoritesClick} />
+                            <UserMenu onFavoritesClick={onFavoritesClick} onReservationsClick={onReservationsClick} />
                         ) : (
                             <button
                                 onClick={handleOpenLogin}

@@ -253,7 +253,7 @@ export default function MapView({
                                                     e.stopPropagation();
                                                     toggleFavorite(s);
                                                 }}
-                                                className="text-yellow-500 hover:text-yellow-600 focus:outline-none z-[1000] relative p-1"
+                                                className="text-yellow-500 hover:text-yellow-600 focus:outline-none ml-2 flex-shrink-0 p-1 relative z-[9999]"
                                                 title={isFav ? "Remove from favorites" : "Add to favorites"}
                                             >
                                                 {isFav ? (
@@ -296,7 +296,7 @@ export default function MapView({
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.latitude},${s.longitude}`, '_blank');
+                                                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${s.latitude},${s.longitude}&travelmode=driving`, '_blank');
                                                 }}
                                                 className="px-3 py-1.5 text-sm font-medium rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors shadow-sm"
                                             >

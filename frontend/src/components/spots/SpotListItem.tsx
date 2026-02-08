@@ -6,6 +6,8 @@ import React from 'react';
 type Props = {
     id: number;
     name: string;
+    city?: string;
+    area?: string;
     address: string;
     pricePerHour: number | null;
     minutesWalk: number | null;
@@ -17,6 +19,8 @@ type Props = {
 export default function SpotListItem({
     id,
     name,
+    city,
+    area,
     address,
     pricePerHour,
     minutesWalk,
@@ -52,7 +56,9 @@ export default function SpotListItem({
             <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{name}</h3>
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                            {city || name}
+                        </h3>
                         {isAuthenticated && (
                             <button
                                 onClick={toggleFavorite}
@@ -70,7 +76,13 @@ export default function SpotListItem({
                             </button>
                         )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{address}</p>
+                    {/* Header is City (if exists) or Name/Location */}
+                    {/* Subtext is Area (if exists) or Address/Location */}
+                    {((area || address) !== (city || name)) && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                            {area || address}
+                        </p>
+                    )}
 
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                         <span className={`font-medium ${getStatusColor(status)}`}>
