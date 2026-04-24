@@ -31,7 +31,6 @@ services:
   # ---------------------------------------------------------------------------
   # Redis Cache
   # Used for caching parking spot data to reduce database load.
-  # In production, this would be replaced with AWS ElastiCache.
   # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
