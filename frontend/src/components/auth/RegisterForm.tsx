@@ -84,9 +84,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onClose, onSwitchToL
 
     try {
       // API call για δημιουργία λογαριασμού
-      const user = await authService.register(formData);
-      // Αυτόματη σύνδεση μετά εγγραφή
-      login(user);
+      await authService.register(formData);
+      // Auto-login after registration to obtain a JWT token
+      const userWithToken = await authService.login({ email: formData.email, password: formData.password });
+      login(userWithToken);
       onClose();
     } catch (error) {
       setErrors([error instanceof Error ? error.message : 'Registration failed. Please try again.']);

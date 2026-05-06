@@ -66,6 +66,7 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const response = await fetch(url, {
         ...options,  // method, body, κτλ.
         headers,     // τα headers που φτιάξαμε
+        cache: 'no-store',  // prevent browser from caching API responses (avoids stale 401s)
     });
 
     // Αν ο server επέστρεψε σφάλμα (status 400, 401, 403, 404, 500...)
